@@ -12,6 +12,10 @@ source "/opt/homebrew/opt/fzf/shell/completion.zsh"
 # ------------
 source "/opt/homebrew/opt/fzf/shell/key-bindings.zsh"
 
+# source git plugin
+# ------------
+source "./.configs/fzf/git.sh"
+
 ### CUstomization 
 
 _gen_fzf_default_opts() {
