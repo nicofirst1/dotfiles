@@ -1,11 +1,14 @@
 #!/bin/bash
 
-dotfiles_dir="."
 verbose=true
 
-# Check if the current directory is inside the dotfiles directory
-if [[ $PWD != *"dotfiles"* ]]; then
-    echo "Current directory is not inside the dotfiles directory."
+# Check if the dotfiles directory is in the home directory
+if [[ -d "$HOME/dotfiles" ]]; then
+    # Save the dotfiles directory with the absolute path
+    dotfiles_dir=$(realpath "$HOME/dotfiles")
+else
+    # Exit with a warning if the dotfiles directory is not in the home directory
+    echo "Dotfiles directory is not in the home directory. Exiting..."
     exit 1
 fi
 
@@ -22,7 +25,7 @@ for dotfile in $dotfiles_dir/.[!.]*; do
         fi
 
         # Check if the file already exists in the home directory
-        if [ ! -f "$(eval echo $HOME)/$filename" ]; then
+        if [ ! -f "$HOME/$filename" ]; then
             # Check if the file is a symbolic link
             if [ -L "$dotfile" ]; then
                 if [ "$verbose" = true ]; then
@@ -30,7 +33,7 @@ for dotfile in $dotfiles_dir/.[!.]*; do
                 fi
             else
                 # Create the symbolic link in the home directory
-                ln -s "$dotfile" "$(eval echo $HOME)/$filename"
+                ln -s "$dotfile" "$HOME/$filename"
                 if [ "$verbose" = true ]; then
                     echo "Created symbolic link for $filename in $HOME"
                 fi
@@ -40,9 +43,9 @@ for dotfile in $dotfiles_dir/.[!.]*; do
             read -p "File $filename already exists. Do you want to override it with a symbolic link? (y/n): " answer
             if [ "$answer" = "y" ]; then
                 # Remove the existing file
-                rm "$(eval echo $HOME)/$filename"
+                rm "$HOME/$filename"
                 # Create the symbolic link
-                ln -s "$dotfile" "$(eval echo $HOME)/$filename"
+                ln -s "$dotfile" "$HOME/$filename"
                 if [ "$verbose" = true ]; then
                     echo "Overwrote file $filename with a symbolic link"
                 fi
