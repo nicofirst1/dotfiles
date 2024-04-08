@@ -22,9 +22,12 @@ if ! command -v zsh &>/dev/null; then
 fi
 
 # check if python is available
-check_python() install_mackup() if # install mackup
-    # Download Oh My Zsh
-    [ ! -d "$HOME/.oh-my-zsh" ]
+check_python
+# install mackup
+install_mackup
+
+# Download Oh My Zsh
+if [ ! -d "$HOME/.oh-my-zsh" ]
 then
     sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 else
