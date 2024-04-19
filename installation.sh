@@ -6,6 +6,8 @@ DOTFILES_DIR="$HOME/dotfiles"
 
 source $DOTFILES_DIR/utils.sh
 
+echo " DOTFILES_DIR: $DOTFILES_DIR"
+
 # Ensure the repos directory exists
 mkdir -p "$REPO_DIR"
 
@@ -18,6 +20,15 @@ if ! command -v zsh &>/dev/null; then
         exit 1
     elif [[ "$OSTYPE" == "darwin"* ]]; then
         brew install zsh
+    fi
+fi
+
+# check if zsh is the default shell
+if [[ "$SHELL" != "/bin/zsh" ]]; then
+    echo "Zsh is not the default shell. Do you want to change the default shell to Zsh? (y/n)"
+    #read answer
+    if [ "$answer" = "y" ]; then
+        chsh -s /bin/zsh
     fi
 fi
 
@@ -36,10 +47,13 @@ fi
 
 # Plugins
 git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions
-git clone https://github.com/junegunn/fzf.git ~/$REPO_DIR/fzf-git
-~/$REPO_DIR/fzf-git/install --all
+git clone https://github.com/junegunn/fzf.git $REPO_DIR/fzf-git
+$REPO_DIR/fzf-git/install --all
 
 # Install Powerlevel10k theme
-install_chruby() cp $DOTFILES_DIR/.mackup.cfg $HOME/.mackup.cfg
+install_chruby 
+cp $DOTFILES_DIR/.mackup.cfg $HOME/.mackup.cfg
+
+mackup restore
 
 echo "Installation and setup complete. Please restart your terminal."

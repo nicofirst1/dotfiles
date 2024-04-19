@@ -14,7 +14,7 @@ source "/opt/homebrew/opt/fzf/shell/key-bindings.zsh"
 
 # source git plugin
 # ------------
-source "./.configs/fzf/git.sh"
+source "$HOME/dotfiles/.configs/fzf/git.sh"
 
 ### CUstomization 
 
