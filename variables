@@ -1,0 +1,4 @@
+# Set up directories
+REPO_DIR="$HOME/Repos"
+DOTFILES_DIR="$HOME/dotfiles"
+MACHINE_SOURCE="$HOME/.machine.sh"

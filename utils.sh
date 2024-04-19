@@ -1,9 +1,15 @@
+source variables
+
+
 install_chruby() {
     if [[ "$OSTYPE" == "linux-gnu"* ]]; then
         echo "Running on Linux"
         # Add Linux-specific code here
 
         cd $REPO_DIR
+        curl -fsSL https://github.com/rbenv/rbenv-installer/raw/HEAD/bin/rbenv-installer | bash
+
+
         # Download chruby
         wget https://github.com/postmodern/chruby/releases/download/v0.3.9/chruby-0.3.9.tar.gz
         tar -xzvf chruby-0.3.9.tar.gz
@@ -34,14 +40,11 @@ install_mackup() {
 
     # Check for Python and install Mackup
     if command -v python &>/dev/null || command -v python3 &>/dev/null; then
-        echo "Python is available. Installing Mackup..."
-        pip install --upgrade mackup || pip3 install --upgrade mackup
+        echo "Installing Mackup..."
+        pip install --user --upgrade mackup || pip3 install --user --upgrade mackup
     else
         echo "Python is not available."
-        if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-            echo "Attempting to load Python module..."
-            module load python || { echo "Failed to load Python module. Please ensure Python is installed."; }
-        fi
+        
     fi
 
 }
@@ -63,4 +66,20 @@ check_python() {
     else
         echo "Python is already installed."
     fi
+}
+
+
+zsh_plugins() {
+    git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions
+    git clone https://github.com/zdharma-continuum/history-search-multi-word ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/history-search-multi-word
+    git clone https://github.com/wfxr/forgit.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/forgit
+    
+    git clone https://github.com/junegunn/fzf.git $REPO_DIR/fzf-git
+    $REPO_DIR/fzf-git/install --all
+
+    git clone https://github.com/wting/autojump $REPO_DIR/autojump
+    cd $REPO_DIR/autojump
+    chmod +x install.py
+    ./install.py
+
 }
