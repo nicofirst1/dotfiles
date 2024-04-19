@@ -1,9 +1,10 @@
 ######################################
 # ENVIRONMENT VARIABLES
 ######################################
+
+source variables
 # Path to your oh-my-zsh installation.
 export ZSH="$HOME/.oh-my-zsh"
-export REPO_DIR="$HOME/repos"
 
 
 
@@ -54,13 +55,20 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     source $(brew --prefix)/opt/chruby/share/chruby/auto.sh
     # Autojump
     [[ -s `brew --prefix`/etc/autojump.sh ]] && . `brew --prefix`/etc/autojump.sh
+
+    # Ruby version management
+    chruby ruby-3.3.0
+    
+   # source colorls
+    source $(dirname $(gem which colorls))/tab_complete.sh
+
 elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
 
     source $REPO_DIR/chruby/share/chruby/chruby.sh
     source $REPO_DIR/chruby/share/chruby/auto.sh
+    [[ -s $HOME/.autojump/etc/profile.d/autojump.sh ]] && source $HOME/.autojump/etc/profile.d/autojump.sh
 
 fi
-
 
 
 source $ZSH/oh-my-zsh.sh
@@ -73,22 +81,23 @@ DEFAULT_USER=`whoami`
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ -f ~/.p10k.zsh ]] && source ~/.p10k.zsh
 
-# Ruby version management
-chruby 3.3.0
+
 
 # Aliases
 alias src="source activate"
-alias ls="colorls"
-alias la='colorls -lA --sd'
+# Check if Ruby is installed
+if command -v ruby &> /dev/null; then
+    alias ls="colorls"
+    alias la='colorls -lA --sd'
+else
+    alias la='ls -lA'
+fi
 
 # SSH shortcuts
 alias juwels-booster="ssh brandizzi1@juwels-booster.fz-juelich.de"
 alias juwels-cluster="ssh brandizzi1@juwels-cluster.fz-juelich.de"
 alias bernard="ssh nibr274g@login2.barnard.hpc.tu-dresden.de"
 alias dgx2="ssh dgx2"
-
-# source colorls
-source $(dirname $(gem which colorls))/tab_complete.sh
 
 
 
@@ -101,24 +110,11 @@ export PATH="/usr/local/opt/ruby/bin:/usr/local/lib/ruby/gems/3.0.0/bin:$PATH"
 export PATH="$HOME/.gem/ruby/3.0.0/bin:$PATH"
 
 # FZF setup
-[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
-source ~/Repos/fzf-git/fzf-git.sh
+[ -f $HOME/.fzf.zsh ] && source $HOME/.fzf.zsh
+source $REPOS/fzf-git/fzf-git.sh
 
 # the fuck 
 eval $(thefuck --alias)
 
-# Conda initialize
-# >>> conda initialize >>>
-# !! Contents within this block are managed by 'conda init' !!
-__conda_setup="$('/Users/nbrandizzi/miniconda3/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
-if [ $? -eq 0 ]; then
-    eval "$__conda_setup"
-else
-    if [ -f "/Users/nbrandizzi/miniconda3/etc/profile.d/conda.sh" ]; then
-        . "/Users/nbrandizzi/miniconda3/etc/profile.d/conda.sh"
-    else
-        export PATH="/Users/nbrandizzi/miniconda3/bin:$PATH"
-    fi
-fi
-unset __conda_setup
-# <<< conda initialize <<<
+# source machine dependent stuff, for example conda
+source $MACHINE_SOURCE

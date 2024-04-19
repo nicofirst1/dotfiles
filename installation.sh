@@ -1,8 +1,5 @@
 #!/bin/bash
-
-# Set up directories
-REPO_DIR="$HOME/repos"
-DOTFILES_DIR="$HOME/dotfiles"
+source ./variables
 
 source $DOTFILES_DIR/utils.sh
 
@@ -23,14 +20,7 @@ if ! command -v zsh &>/dev/null; then
     fi
 fi
 
-# check if zsh is the default shell
-if [[ "$SHELL" != "/bin/zsh" ]]; then
-    echo "Zsh is not the default shell. Do you want to change the default shell to Zsh? (y/n)"
-    #read answer
-    if [ "$answer" = "y" ]; then
-        chsh -s /bin/zsh
-    fi
-fi
+
 
 # check if python is available
 check_python
@@ -46,14 +36,26 @@ else
 fi
 
 # Plugins
-git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions
-git clone https://github.com/junegunn/fzf.git $REPO_DIR/fzf-git
-$REPO_DIR/fzf-git/install --all
+zsh_plugins
+
+pip install --user --upgrade thefuck || pip3 install --user --upgrade thefuck
+
 
 # Install Powerlevel10k theme
 install_chruby 
+git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k
+
+
+# Mackup restore
 cp $DOTFILES_DIR/.mackup.cfg $HOME/.mackup.cfg
 
 mackup restore
+
+# create the machine source file if not present
+if [ ! -f "$MACHINE_SOURCE" ]; then
+    touch "$MACHINE_SOURCE"
+fi
+
+
 
 echo "Installation and setup complete. Please restart your terminal."
