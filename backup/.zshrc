@@ -1,3 +1,12 @@
+######################################
+# ENVIRONMENT VARIABLES
+######################################
+# Path to your oh-my-zsh installation.
+export ZSH="$HOME/.oh-my-zsh"
+export REPO_DIR="$HOME/repos"
+
+
+
 # If you come from bash you might have to change your $PATH.
 # Adjust PATH for different OS
 if [[ "$OSTYPE" == "linux-gnu"* ]]; then
@@ -16,8 +25,7 @@ if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]
   source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
 fi
 
-# Path to your oh-my-zsh installation.
-export ZSH="$HOME/.oh-my-zsh"
+
 
 # Set name of the theme to load --- if set to "random", it will
 # load a random theme each time oh-my-zsh is loaded.
@@ -82,8 +90,7 @@ alias dgx2="ssh dgx2"
 # source colorls
 source $(dirname $(gem which colorls))/tab_complete.sh
 
-# chruby
-source $HOMEBREW_PREFIX/opt/chruby/share/chruby/chruby.sh
+
 
 # Fix background for zsh-autocompletion
 ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=6'
