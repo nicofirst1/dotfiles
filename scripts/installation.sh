@@ -12,9 +12,8 @@ mkdir -p "$REPO_DIR"
 if ! command -v zsh &>/dev/null; then
     echo "Zsh not found. Installing..."
     if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        echo "Zsh not found and cannot be installed without sudo privileges."
-        echo "Please install Zsh manually if you wish to continue."
-        exit 1
+        echo "Zsh not found installing from source"
+        install_zsh
     elif [[ "$OSTYPE" == "darwin"* ]]; then
         brew install zsh
     fi
