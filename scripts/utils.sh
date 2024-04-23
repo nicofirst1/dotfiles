@@ -73,7 +73,8 @@ zsh_plugins() {
     git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions
     git clone https://github.com/zdharma-continuum/history-search-multi-word ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/history-search-multi-word
     git clone https://github.com/wfxr/forgit.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/forgit
-    
+    git clone https://github.com/agkozak/zsh-z ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-z
+
     git clone https://github.com/junegunn/fzf.git $REPO_DIR/fzf-git
     $REPO_DIR/fzf-git/install --all
 
@@ -82,4 +83,34 @@ zsh_plugins() {
     chmod +x install.py
     ./install.py
 
+}
+
+install_zsh(){
+
+    # clone the zsh repo
+    git clone git://git.code.sf.net/p/zsh/code $REPO_DIR/zsh 
+    cd $REPO_DIR/zsh
+
+    # configure and install zsh
+    ./configure --prefix=$HOME/.local
+    make 
+    make install 
+
+
+}
+
+install_gnustow(){
+
+    cd $REPO_DIR
+    wget https://ftp.gnu.org/gnu/stow/stow-latest.tar.gz
+
+    tar -xzvf stow-latest.tar.gz
+    # Extract the tarball
+    rm stow-latest.tar.gz
+    cd stow-2.4.0
+
+     # configure and install zsh
+    ./configure --prefix=$HOME/.local
+    make 
+    make install 
 }

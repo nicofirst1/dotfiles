@@ -45,6 +45,8 @@ plugins=(
   zsh-autosuggestions
   history-search-multi-word
   forgit
+  zsh-syntax-highlighting
+  zsh-z
 )
 
 # macOS specific configurations
@@ -66,7 +68,6 @@ elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
 
     source $REPO_DIR/chruby/share/chruby/chruby.sh
     source $REPO_DIR/chruby/share/chruby/auto.sh
-    [[ -s $HOME/.autojump/etc/profile.d/autojump.sh ]] && source $HOME/.autojump/etc/profile.d/autojump.sh
 
 fi
 
