@@ -6,20 +6,19 @@ source $HOME/dotfiles/scripts/variables
 # Path to your oh-my-zsh installation.
 export ZSH="$HOME/.oh-my-zsh"
 
+# macOS specific configurations
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    
+    source $CONFIG_DIR/zsh/darwin_settings.zsh
 
+elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
 
-# If you come from bash you might have to change your $PATH.
-# Adjust PATH for different OS
-if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-    # Linux-specific PATH adjustments
-    # Example for a common path in Linux environments
-    export PATH="$PATH:$HOME/.local/bin"
-elif [[ "$OSTYPE" == "darwin"* ]]; then
-    # macOS-specific PATH adjustments
-    export PATH="$PATH:/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
-    export PATH="${PATH:+${PATH}:}/opt/homebrew/opt/fzf/bin"
+    source $CONFIG_DIR/zsh/linux_settings.zsh
+
 
 fi
+
+
 
 # Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
 # Initialization code that may require console input (password prompts, [y/n]
@@ -51,25 +50,6 @@ plugins=(
   zsh-z
 )
 
-# macOS specific configurations
-if [[ "$OSTYPE" == "darwin"* ]]; then
-    plugins=($plugins brew macos)
-    # Homebrew Ruby setup
-    source $(brew --prefix)/opt/chruby/share/chruby/chruby.sh
-    source $(brew --prefix)/opt/chruby/share/chruby/auto.sh
-
-    # Ruby version management
-    chruby ruby-3.3.0
-    
-   # source colorls
-    source $(dirname $(gem which colorls))/tab_complete.sh
-
-elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
-
-    source $REPO_DIR/chruby/share/chruby/chruby.sh
-    source $REPO_DIR/chruby/share/chruby/auto.sh
-
-fi
 
 
 source $ZSH/oh-my-zsh.sh
@@ -80,34 +60,20 @@ source $ZSH/oh-my-zsh.sh
 DEFAULT_USER=`whoami`
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
-[[ -f $HOME/.p10k.zsh ]] && source $HOME/.p10k.zsh
+[[ -f $CONFIG_DIR/zsh/.p10k.zsh ]] && source $CONFIG_DIR/zsh/.p10k.zsh
 
 
 
 # Aliases
-alias src="source activate"
-
-
-
-# Check if Ruby is installed
-if command -v ruby &> /dev/null; then
-    alias ls="colorls"
-    alias la='colorls -lA --sd'
-else
-    alias la='ls -lA'
-fi
-
+source $CONFIG_DIR/aliases.zsh
 
 # Fix background for zsh-autocompletion
 ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=6'
 
-# Source custom commands
-export PATH="$HOME/.poetry/bin:$PATH"
-export PATH="/usr/local/opt/ruby/bin:/usr/local/lib/ruby/gems/3.0.0/bin:$PATH"
-export PATH="$HOME/.gem/ruby/3.0.0/bin:$PATH"
+
 
 # FZF setup
-[ -f $HOME/.fzf.zsh ] && source $HOME/.fzf.zsh
+[ -f $CONFIG_DIR/zsh/.fzf.zsh ] && source $CONFIG_DIR/zsh/.fzf.zsh
 source $CONFIG_DIR/fzf/git.sh
 
 # the fuck 
