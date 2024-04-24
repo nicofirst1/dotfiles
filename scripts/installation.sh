@@ -1,30 +1,28 @@
 #!/bin/bash
-source ./variables
-
+source $HOME/dotfiles/scripts/variables
 source $DOTFILES_DIR/utils.sh
 
 echo " DOTFILES_DIR: $DOTFILES_DIR"
 
 # Ensure the repos directory exists
 mkdir -p "$REPO_DIR"
+mkdir -p "$HOME/.local"
+
+# add to PATH all in .local/bin
+export PATH="$PATH:$HOME/.local/bin"
 
 # Install Zsh if not installed
 if ! command -v zsh &>/dev/null; then
     echo "Zsh not found. Installing..."
     if [[ "$OSTYPE" == "linux-gnu"* ]]; then
         echo "Zsh not found installing from source"
-        install_zsh
+        echo "You can install it with the zsh_install command"
     elif [[ "$OSTYPE" == "darwin"* ]]; then
         brew install zsh
     fi
 fi
 
 
-
-# check if python is available
-check_python
-# install mackup
-install_mackup
 
 # Download Oh My Zsh
 if [ ! -d "$HOME/.oh-my-zsh" ]
@@ -37,7 +35,7 @@ fi
 # Plugins
 zsh_plugins
 
-pip install --user --upgrade thefuck || pip3 install --user --upgrade thefuck
+#pip install --user --upgrade thefuck || pip3 install --user --upgrade thefuck
 
 
 # Install Powerlevel10k theme
@@ -45,10 +43,9 @@ install_chruby
 git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k
 
 
-# Mackup restore
-cp $DOTFILES_DIR/.mackup.cfg $HOME/.mackup.cfg
+# STOW restore
+stow_restore
 
-mackup restore
 
 # create the machine source file if not present
 if [ ! -f "$MACHINE_SOURCE" ]; then

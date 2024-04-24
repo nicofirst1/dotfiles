@@ -1,4 +1,6 @@
 # Set up directories
 REPO_DIR="$HOME/Repos"
 DOTFILES_DIR="$HOME/dotfiles"
+BACKUP_DIR="$DOTFILES_DIR/backups"
 MACHINE_SOURCE="$HOME/.machine.sh"
+CONFIG_DIR="$HOME/.config"
