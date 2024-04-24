@@ -1,3 +1,4 @@
+source $HOME/dotfiles/scripts/variables
 
 install_chruby() {
     if [[ "$OSTYPE" == "linux-gnu"* ]]; then
@@ -121,3 +122,32 @@ install_gnustow(){
 stow_restore() {
     stow --dir=$DOTFILES_DIR --target=$HOME --restow backups 
 }
+
+
+#########################
+#   Rust Installation   #
+#########################
+
+
+install_rust(){
+     # Check if Rust is installed
+    if ! command -v rustc &>/dev/null; then
+        echo "Rust not found. Installing..."
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh 
+    fi
+
+}
+
+install_rust_plugins(){
+
+    # Check if Rust is installed
+    install_rust
+
+    # Install lsd
+    cargo install lsd
+
+    # Install bat
+    cargo install --locked bat
+
+}
+
