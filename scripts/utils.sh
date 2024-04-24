@@ -1,5 +1,3 @@
-source variables
-
 
 install_chruby() {
     if [[ "$OSTYPE" == "linux-gnu"* ]]; then
@@ -74,14 +72,12 @@ zsh_plugins() {
     git clone https://github.com/zdharma-continuum/history-search-multi-word ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/history-search-multi-word
     git clone https://github.com/wfxr/forgit.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/forgit
     git clone https://github.com/agkozak/zsh-z ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-z
+    git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting
+
 
     git clone https://github.com/junegunn/fzf.git $REPO_DIR/fzf-git
     $REPO_DIR/fzf-git/install --all
 
-    git clone https://github.com/wting/autojump $REPO_DIR/autojump
-    cd $REPO_DIR/autojump
-    chmod +x install.py
-    ./install.py
 
 }
 
@@ -102,15 +98,26 @@ install_zsh(){
 install_gnustow(){
 
     cd $REPO_DIR
-    wget https://ftp.gnu.org/gnu/stow/stow-latest.tar.gz
+    wget https://ftp.gnu.org/gnu/stow/stow-latest.tar.gz -P $REPO_DIR
 
-    tar -xzvf stow-latest.tar.gz
+    tar -xzvf $REPO_DIR/stow-latest.tar.gz
     # Extract the tarball
-    rm stow-latest.tar.gz
-    cd stow-2.4.0
+    rm $REPO_DIR/stow-latest.tar.gz
 
+    STOW_VERSION=$(ls -d stow-*/)
+    mv $STOW_VERSION stow
+
+    STOW_DIR=$REPO_DIR/stow
+
+    cd $STOW_DIR
      # configure and install zsh
     ./configure --prefix=$HOME/.local
     make 
     make install 
+
+    cd -
+}
+
+stow_restore() {
+    stow --dir=$DOTFILES_DIR --target=$HOME --restow backups 
 }

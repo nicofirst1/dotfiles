@@ -2,7 +2,7 @@
 # ENVIRONMENT VARIABLES
 ######################################
 
-source variables
+source $HOME/dotfiles/scripts/variables
 # Path to your oh-my-zsh installation.
 export ZSH="$HOME/.oh-my-zsh"
 
@@ -17,6 +17,8 @@ if [[ "$OSTYPE" == "linux-gnu"* ]]; then
 elif [[ "$OSTYPE" == "darwin"* ]]; then
     # macOS-specific PATH adjustments
     export PATH="$PATH:/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
+    export PATH="${PATH:+${PATH}:}/opt/homebrew/opt/fzf/bin"
+
 fi
 
 # Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
@@ -55,8 +57,6 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     # Homebrew Ruby setup
     source $(brew --prefix)/opt/chruby/share/chruby/chruby.sh
     source $(brew --prefix)/opt/chruby/share/chruby/auto.sh
-    # Autojump
-    [[ -s `brew --prefix`/etc/autojump.sh ]] && . `brew --prefix`/etc/autojump.sh
 
     # Ruby version management
     chruby ruby-3.3.0
@@ -80,12 +80,15 @@ source $ZSH/oh-my-zsh.sh
 DEFAULT_USER=`whoami`
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
-[[ -f ~/.p10k.zsh ]] && source ~/.p10k.zsh
+[[ -f $HOME/.p10k.zsh ]] && source $HOME/.p10k.zsh
 
 
 
 # Aliases
 alias src="source activate"
+
+
+
 # Check if Ruby is installed
 if command -v ruby &> /dev/null; then
     alias ls="colorls"
@@ -93,13 +96,6 @@ if command -v ruby &> /dev/null; then
 else
     alias la='ls -lA'
 fi
-
-# SSH shortcuts
-alias juwels-booster="ssh brandizzi1@juwels-booster.fz-juelich.de"
-alias juwels-cluster="ssh brandizzi1@juwels-cluster.fz-juelich.de"
-alias bernard="ssh nibr274g@login2.barnard.hpc.tu-dresden.de"
-alias dgx2="ssh dgx2"
-
 
 
 # Fix background for zsh-autocompletion
@@ -112,7 +108,7 @@ export PATH="$HOME/.gem/ruby/3.0.0/bin:$PATH"
 
 # FZF setup
 [ -f $HOME/.fzf.zsh ] && source $HOME/.fzf.zsh
-source $REPOS/fzf-git/fzf-git.sh
+source $CONFIG_DIR/fzf/git.sh
 
 # the fuck 
 eval $(thefuck --alias)
