@@ -2,7 +2,7 @@
 # ENVIRONMENT VARIABLES
 ######################################
 
-source $HOME/dotfiles/scripts/variables
+source $HOME/dotfiles/scripts/variables.sh
 # Path to your oh-my-zsh installation.
 export ZSH="$HOME/.oh-my-zsh"
 
@@ -47,9 +47,9 @@ plugins=(
   history-search-multi-word
   forgit
   zsh-syntax-highlighting
-  zsh-z
 )
 
+eval "$(zoxide init zsh)"
 
 
 source $ZSH/oh-my-zsh.sh
@@ -65,11 +65,10 @@ DEFAULT_USER=`whoami`
 
 
 # Aliases
-source $CONFIG_DIR/aliases.zsh
+source $CONFIG_DIR/aliases.sh
 
 # Fix background for zsh-autocompletion
 ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=6'
-
 
 
 # FZF setup
@@ -77,7 +76,7 @@ ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=6'
 source $CONFIG_DIR/fzf/git.sh
 
 # the fuck 
-eval $(thefuck --alias)
+#eval $(thefuck --alias)
 
 # source machine dependent stuff, for example conda
 source $MACHINE_SOURCE
