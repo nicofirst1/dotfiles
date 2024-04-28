@@ -5,7 +5,7 @@
 
 # Note: This script assumes the presence of certain environment variables, such as $OSTYPE, $REPO_DIR, $DOTFILES_DIR, and $ZSH_CUSTOM.
 # Make sure to set these variables appropriately before running the script.
-source $HOME/dotfiles/scripts/variables.sh
+source $HOME/dotfiles/scripts/exports.sh
 
 #########################
 #        ZSH            #
@@ -16,13 +16,14 @@ source $HOME/dotfiles/scripts/variables.sh
 # It also clones the fzf repository and runs its installation script.
 
 zsh_plugins() {
-    git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions
-    git clone https://github.com/zdharma-continuum/history-search-multi-word ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/history-search-multi-word
-    git clone https://github.com/wfxr/forgit.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/forgit
-    git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting
+    git clone https://github.com/zsh-users/zsh-autosuggestions "$ZSH_CUSTOM/plugins/zsh-autosuggestions"
+    git clone https://github.com/zdharma-continuum/history-search-multi-word "$ZSH_CUSTOM/plugins/history-search-multi-word"
+    git clone https://github.com/wfxr/forgit.git "$ZSH_CUSTOM/plugins/forgit"
+    git clone https://github.com/zsh-users/zsh-syntax-highlighting.git "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting"
 
     git clone https://github.com/junegunn/fzf.git $REPO_DIR/fzf-git
-    $REPO_DIR/fzf-git/install --all
+    chmod +x $REPO_DIR/fzf-git/fzf-git.sh
+    $REPO_DIR/fzf-git/fzf-git.sh --all
 
 }
 
@@ -47,25 +48,30 @@ install_zsh() {
 # It downloads the latest version of GNU Stow, extracts it, and installs it with a custom prefix.
 install_gnustow() {
 
-    cd $REPO_DIR
-    wget https://ftp.gnu.org/gnu/stow/stow-latest.tar.gz -P $REPO_DIR
+    # check if stow is already installed
+    if command -v stow &>/dev/null; then
+        echo "GNU Stow is already installed."
+        return
+    fi
 
-    tar -xzvf $REPO_DIR/stow-latest.tar.gz
-    # Extract the tarball
+    curl -o $REPO_DIR/stow-latest.tar.gz  https://ftp.gnu.org/gnu/stow/stow-latest.tar.gz 
+
+    tar -xzvf $REPO_DIR/stow-latest.tar.gz -C $REPO_DIR
+    # Extract the tarball in the $REPO_DIR directory
     rm $REPO_DIR/stow-latest.tar.gz
 
-    STOW_VERSION=$(ls -d stow-*/)
-    mv $STOW_VERSION stow
+    mv $REPO_DIR/stow-*/ $REPO_DIR/stow
 
     STOW_DIR=$REPO_DIR/stow
 
+    # configure and install 
+    (
     cd $STOW_DIR
-    # configure and install zsh
-    ./configure --prefix=$HOME/.local
+    ./configure --prefix=$LOCAL_DIR
     make
     make install
+    )
 
-    cd -
 }
 
 # stow_restore():
@@ -153,6 +159,111 @@ install_rust_plugins() {
     # install z
     cargo install zoxide --locked
 
+    
+
+}
+
+
+#########################
+#        TMUX           #
+#########################
+
+install_libevent(){
+
+    #check if '$REPO_DIR/libevent' already exists and assume installation
+    if [ -d "$REPO_DIR/libevent" ]; then
+        echo "libevent is already installed."
+        return
+    fi
+
+    latest_url="https://github.com/libevent/libevent/releases/download/release-2.1.12-stable/libevent-2.1.12-stable.tar.gz"
+    
+    echo "Downloading libevent from $latest_url"
+
+    curl -Ls -o $REPO_DIR/libevent.tar.gz  $latest_url
+    
+    tar -xzvf $REPO_DIR/libevent.tar.gz -C $REPO_DIR/
+    rm $REPO_DIR/libevent.tar.gz
+
+    mv $REPO_DIR/libevent-*/ $REPO_DIR/libevent
+
+    LIBEVENT_DIR=$REPO_DIR/libevent
+
+    # configure and install 
+    (
+        cd $LIBEVENT_DIR
+        ./configure --prefix=$LOCAL_DIR  --enable-shared
+        make
+        make install
+    )
+}
+
+install_ncurses(){
+
+    # check for the file 'ncurses6-config' in $LOCAL_DIR/bin
+    if [ -f "$LOCAL_DIR/bin/ncurses6-config" ]; then
+        echo "ncurses is already installed."
+        return
+    fi
+
+    latest_url="https://invisible-island.net/datafiles/release/ncurses.tar.gz"
+
+    echo "Downloading ncurses from $latest_url"
+
+    curl -Ls -o $REPO_DIR/ncurses.tar.gz  $latest_url
+    
+    tar -xzvf $REPO_DIR/ncurses.tar.gz -C $REPO_DIR/
+    rm $REPO_DIR/ncurses.tar.gz
+
+    mv $REPO_DIR/ncurses-*/ $REPO_DIR/ncurses
+
+    ncurses_dir=$REPO_DIR/ncurses
+
+    # configure and install 
+    (
+        cd $ncurses_dir
+        ./configure --prefix=$LOCAL_DIR --with-shared --with-termlib --enable-pc-files --with-pkg-config-libdir=$HOME/local/lib/pkgconfig
+        make
+        make install
+    )
+}
+
+install_tmux(){
+
+    # check if installed
+    if command -v tmux &>/dev/null; then
+        echo "tmux is already installed."
+        return
+    fi
+
+    # install dependencies
+    install_libevent    
+    install_ncurses
+
+
+    # tmux install 
+
+    git clone --depth 1 https://github.com/tmux/tmux.git $REPO_DIR/tmux
+
+    (
+        cd $REPO_DIR/tmux
+        git fetch --unshallow
+        PKG_CONFIG_PATH=$HOME/local/lib/pkgconfig ./configure  --prefix=$LOCAL_DIR
+        make
+        make install 
+    )
+
+
+    # oh-my-tmux install
+    git clone https://github.com/gpakosz/.tmux.git $REPO_DIR/oh-my-tmux
+    mkdir -p "$CONFIG_DIR/tmux"
+    ln -s "$REPO_DIR/oh-my-tmux/.tmux.conf" "$CONFIG_DIR/tmux/tmux.conf"
+
+    # tpm install
+    git clone https://github.com/tmux-plugins/tpm $REPO_DIR/tmux/plugins/tpm
+
+
+
 }
 
 
@@ -175,7 +286,7 @@ install_chruby() {
         curl -fsSL https://github.com/rbenv/rbenv-installer/raw/HEAD/bin/rbenv-installer | bash
 
         # Download chruby
-        wget https://github.com/postmodern/chruby/releases/download/v0.3.9/chruby-0.3.9.tar.gz
+        curl https://github.com/postmodern/chruby/releases/download/v0.3.9/chruby-0.3.9.tar.gz
         tar -xzvf chruby-0.3.9.tar.gz
         cd chruby-0.3.9/
         make install PREFIX=$REPO_DIR/chruby
