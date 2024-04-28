@@ -2,18 +2,17 @@
 # ENVIRONMENT VARIABLES
 ######################################
 
-source $HOME/dotfiles/scripts/variables.sh
-# Path to your oh-my-zsh installation.
-export ZSH="$HOME/.oh-my-zsh"
+source $HOME/dotfiles/scripts/exports.sh
+
 
 # macOS specific configurations
 if [[ "$OSTYPE" == "darwin"* ]]; then
     
-    source $CONFIG_DIR/zsh/darwin_settings.zsh
+    source $DARWIN_SETTING_F
 
 elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
 
-    source $CONFIG_DIR/zsh/linux_settings.zsh
+    source $LINUX_SETTING_F
 
 
 fi
@@ -49,8 +48,6 @@ plugins=(
   zsh-syntax-highlighting
 )
 
-eval "$(zoxide init zsh)"
-
 
 source $ZSH/oh-my-zsh.sh
 
@@ -65,7 +62,7 @@ DEFAULT_USER=`whoami`
 
 
 # Aliases
-source $CONFIG_DIR/aliases.sh
+source $ALIASES_F
 
 # Fix background for zsh-autocompletion
 ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=6'
@@ -77,6 +74,7 @@ source $CONFIG_DIR/fzf/git.sh
 
 # the fuck 
 #eval $(thefuck --alias)
+eval "$(zoxide init zsh)"
 
 # source machine dependent stuff, for example conda
 source $MACHINE_SOURCE

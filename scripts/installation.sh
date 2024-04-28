@@ -6,17 +6,17 @@
 # copies dotfiles to the home directory using symbolic links, and creates a machine source file if not present.
 
 # Source the variables file
-source $HOME/dotfiles/scripts/variables
+source $HOME/dotfiles/scripts/exports.sh
 
 # Source the utility functions file
-source $DOTFILES_DIR/utils.sh
+source $UTILS_F
 
 # Ensure the repos directory exists
-mkdir -p "$REPO_DIR"
-mkdir -p "$HOME/.local"
+mkdir -p $REPO_DIR
+mkdir -p $LOCAL_DIR
 
 # Add all executables in .local/bin to the PATH
-export PATH="$PATH:$HOME/.local/bin"
+export PATH="$PATH:$$LOCAL_DIR/bin"
 
 # Install Zsh if not installed
 if ! command -v zsh &>/dev/null; then
@@ -30,7 +30,7 @@ if ! command -v zsh &>/dev/null; then
 fi
 
 # Download Oh My Zsh if not already installed
-if [ ! -d "$HOME/.oh-my-zsh" ]; then
+if [ ! -d $OMZSH_DIR ]; then
     sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 else
     echo "Oh My Zsh already installed."
@@ -40,10 +40,15 @@ fi
 zsh_plugins
 
 # Install the Powerlevel10k theme
-git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k
+git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "$ZSH_CUSTOM/themes/powerlevel10k"
 
 # Copy dotfiles from $DOTFILES_DIR to $HOME using symbolic links
+install_gnustow
 stow_restore
+
+# install rust if not installed
+install_rust
+install_rust_plugins
 
 # Create the machine source file if not present
 if [ ! -f "$MACHINE_SOURCE" ]; then
