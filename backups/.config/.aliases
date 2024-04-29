@@ -27,3 +27,8 @@ if command -v bat &> /dev/null; then
         git diff --name-only --relative --diff-filter=d | xargs bat --diff
     }
 fi
+
+# check if zoxide is installed
+if command -v z &> /dev/null; then
+    alias cd="z"
+fi
