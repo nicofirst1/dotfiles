@@ -159,6 +159,10 @@ install_rust_plugins() {
     # install z
     cargo install zoxide --locked
 
+    # install tldr
+    cargo install tlrc
+
+
     
 
 }
@@ -219,6 +223,8 @@ install_ncurses(){
 
     ncurses_dir=$REPO_DIR/ncurses
 
+    mkdir -p $HOME/local/lib/pkgconfig
+
     # configure and install 
     (
         cd $ncurses_dir
@@ -270,6 +276,25 @@ install_tmux(){
 #########################
 #      Other/Old        #
 #########################
+
+
+install_entr(){
+
+    # check if installed
+    if command -v entr &>/dev/null; then
+        echo "entr is already installed."
+        return
+    fi
+
+    git clone https://github.com/eradman/entr $REPO_DIR/entr
+
+    (
+        cd $REPO_DIR/entr
+        ./configure 
+        make
+        PREFIX=$LOCAL_DIR make install
+    )
+}
 
 
 # install_chruby():
