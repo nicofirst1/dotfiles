@@ -23,7 +23,7 @@ if ! command -v zsh &>/dev/null; then
     echo "Zsh not found. Installing..."
     if [[ "$OSTYPE" == "linux-gnu"* ]]; then
         echo "Zsh not found installing from source"
-        echo "You can install it with the zsh_install command"
+        install_zsh
     elif [[ "$OSTYPE" == "darwin"* ]]; then
         brew install zsh
     fi

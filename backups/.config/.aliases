@@ -15,7 +15,7 @@ fi
 # Check if bat is installed and set aliases accordingly
 if command -v bat &> /dev/null; then
     alias cat="bat"
-    alias fzf="fzf --preview 'bat --color=always --style=numbers --line-range=:500 {}'"
+    #alias fzf="fzf --preview 'bat --color=always --style=numbers --line-range=:500 {}'"
 
     # Function to tail -f a file with bat
     tf() {
@@ -31,4 +31,14 @@ fi
 # check if zoxide is installed
 if command -v z &> /dev/null; then
     alias cd="z"
+fi
+
+# check if tmux is installed
+if command -v tmux &> /dev/null; then
+    alias tat="tmux attach -t"
+fi
+
+# check if fzf-tmux is installed
+if command -v fzf-tmux &> /dev/null; then
+    alias fzf="fzf-tmux"
 fi

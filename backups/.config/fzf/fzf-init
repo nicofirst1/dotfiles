@@ -1,0 +1,8 @@
+# Setup fzf
+# ---------
+
+source $CONFIG_DIR/fzf/fzf-fn
+
+eval "$(fzf --zsh)"
+
+#source $CONFIG_DIR/fzf/fzf-git
