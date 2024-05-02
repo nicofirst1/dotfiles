@@ -3,6 +3,8 @@
 ######################################
 
 source $HOME/dotfiles/scripts/exports.sh
+source $UTILS_F
+
 
 
 # macOS specific configurations
@@ -22,9 +24,7 @@ fi
 # Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
 # Initialization code that may require console input (password prompts, [y/n]
 # confirmations, etc.) must go above this block; everything else may go below.
-if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
-  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
-fi
+source_if_exists "$CONFIG_DIR/zsh/.p10k.zsh"
 
 
 
@@ -49,7 +49,7 @@ plugins=(
 )
 
 
-source $ZSH/oh-my-zsh.sh
+source_if_exists $ZSH/oh-my-zsh.sh
 
 # User configuration
 
@@ -57,24 +57,28 @@ source $ZSH/oh-my-zsh.sh
 DEFAULT_USER=`whoami`
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
-[[ -f $CONFIG_DIR/zsh/.p10k.zsh ]] && source $CONFIG_DIR/zsh/.p10k.zsh
-
+source_if_exists $CONFIG_DIR/zsh/.p10k.zsh
 
 
 # Aliases
-source $ALIASES_F
+source_if_exists $ALIASES_F
 
 # Fix background for zsh-autocompletion
 ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=6'
 
 
 # FZF setup
-[ -f $CONFIG_DIR/zsh/.fzf.zsh ] && source $CONFIG_DIR/zsh/.fzf.zsh
-source $CONFIG_DIR/fzf/git.sh
+source_if_exists $CONFIG_DIR/fzf/fzf-init
+source_if_exists $CONFIG_DIR/fzf/fzf-fn
+
 
 # the fuck 
 #eval $(thefuck --alias)
 eval "$(zoxide init zsh)"
 
+source_if_exists $ENTR_CONFIG
+
 # source machine dependent stuff, for example conda
-source $MACHINE_SOURCE
+source_if_exists $MACHINE_SOURCE
+
+[ -f "${XDG_CONFIG_HOME:-$HOME/.config}"/fzf/fzf.zsh ] && source "${XDG_CONFIG_HOME:-$HOME/.config}"/fzf/fzf.zsh

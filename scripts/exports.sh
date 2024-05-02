@@ -9,7 +9,7 @@ export LOCAL_DIR="$HOME/.local"       # Directory for storing local files
 
 # Set up files
 export ZSHRC_F="$HOME/.zshrc"       # Path to Zsh configuration file
-export UTILS_F="$SCRIPTS_DIR/utils.sh"       # Path to utility functions file
+export UTILS_F="$SCRIPTS_DIR/functions.sh"       # Path to utility functions file
 export EXPORTS_F="$SCRIPTS_DIR/exports.sh"     # Path to exports file
 export ALIASES_F="$CONFIG_DIR/.aliases"       # Path to Zsh aliases file
 
@@ -21,13 +21,26 @@ export LINUX_SETTING_F="$CONFIG_DIR/zsh/linux_settings.zsh"       # Path to Linu
 export ZSH="$HOME/.oh-my-zsh"       # Path to Oh-My-Zsh installation directory
 export ZSH_CUSTOM="$ZSH/custom"       # Path to Oh-My-Zsh custom directory
 
-
+# Entr
+export ENTR_DIR="$CONFIG_DIR/entr"       # Path to the entr repository
+export ENTR_CONFIG="$ENTR_DIR/conf.sh"       # Path to the entr configuration file
 
 # RUST SETUP
 export RUSTUP_HOME="$LOCAL_DIR/rustup"       # Path to Rustup installation directory
 export CARGO_HOME="$LOCAL_DIR/cargo"       # Path to Cargo installation directory
 
 
+# Prefer US English and use UTF-8.
+export LANG='en_US.UTF-8';
+export LC_ALL='en_US.UTF-8';
+
+
+export XDG_CONFIG_HOME="$HOME/.config"
+export XDG_CACHE_HOME="$HOME/.cache"
+
+
 # path exports
 export PATH="$PATH:$LOCAL_DIR/bin" # local bin
+export PATH="$PATH:$LOCAL_DIR/lib" # local lib
 export PATH="$PATH:$CARGO_HOME/bin" # cargo bin
+

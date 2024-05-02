@@ -21,9 +21,6 @@ zsh_plugins() {
     git clone https://github.com/wfxr/forgit.git "$ZSH_CUSTOM/plugins/forgit"
     git clone https://github.com/zsh-users/zsh-syntax-highlighting.git "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting"
 
-    git clone https://github.com/junegunn/fzf.git $REPO_DIR/fzf-git
-    chmod +x $REPO_DIR/fzf-git/fzf-git.sh
-    $REPO_DIR/fzf-git/fzf-git.sh --all
 
 }
 
@@ -36,10 +33,15 @@ install_zsh() {
     git clone git://git.code.sf.net/p/zsh/code $REPO_DIR/zsh
     cd $REPO_DIR/zsh
 
-    # configure and install zsh
-    ./configure --prefix=$HOME/.local
+    # configure and install 
+    (
+    cd $REPO_DIR/zsh
+    # https://unix.stackexchange.com/questions/673669/installing-zsh-from-source-file-without-root-user-access
+    ./Util/preconfig
+    CPPFLAGS="-I$LOCAL_DIR/include" LDFLAGS="-L$LOCAL_DIR/lib" ./configure --prefix=$LOCAL_DIR
     make
     make install
+    )
 
 }
 
@@ -274,6 +276,28 @@ install_tmux(){
 
 
 #########################
+#        FZF            #
+#########################
+
+install_fzf(){
+
+    # check if installed
+    if command -v fzf &>/dev/null; then
+        echo "fzf is already installed."
+        return
+    fi
+
+    git clone https://github.com/junegunn/fzf.git  $REPO_DIR/fzf
+    
+        (
+            cd $REPO_DIR/fzf
+            ./install --bin  --xdg     
+            mv bin/* $LOCAL_DIR/bin/
+
+        )
+}
+
+#########################
 #      Other/Old        #
 #########################
 
@@ -333,5 +357,16 @@ install_chruby() {
     else
         echo "Unknown operating system"
         exit 1
+    fi
+}
+
+# Function to source a file if it exists
+# Arguments:
+#   $1: The file path to be sourced
+source_if_exists() {
+    if [ -f "$1" ]; then
+        source "$1"
+    else 
+        echo "File not found: $1"
     fi
 }
