@@ -292,7 +292,7 @@ install_fzf(){
         (
             cd $REPO_DIR/fzf
             ./install --bin  --xdg     
-            mv bin/* $LOCAL_DIR/bin/
+            cp bin/* $LOCAL_DIR/bin/
 
         )
 }
