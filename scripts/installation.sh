@@ -24,6 +24,8 @@ if ! command -v zsh &>/dev/null; then
     if [[ "$OSTYPE" == "linux-gnu"* ]]; then
         echo "Zsh not found installing from source"
         install_zsh
+        echo "Zsh installed, please restart your terminal."
+        exit 0
     elif [[ "$OSTYPE" == "darwin"* ]]; then
         brew install zsh
     fi
@@ -49,6 +51,9 @@ stow_restore
 # install rust if not installed
 install_rust
 install_rust_plugins
+
+# install fzf
+install_fzf
 
 # Create the machine source file if not present
 if [ ! -f "$MACHINE_SOURCE" ]; then
