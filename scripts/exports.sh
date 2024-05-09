@@ -34,9 +34,12 @@ export CARGO_HOME="$LOCAL_DIR/cargo"       # Path to Cargo installation director
 export LANG='en_US.UTF-8';
 export LC_ALL='en_US.UTF-8';
 
-
+# Set up XDG directories
 export XDG_CONFIG_HOME="$HOME/.config"
 export XDG_CACHE_HOME="$HOME/.cache"
+
+# Oh-My-Zsh setup
+export OMZSH_DIR="$HOME/.oh-my-zsh" # path to Oh-My-Zsh installation directory
 
 
 # path exports
