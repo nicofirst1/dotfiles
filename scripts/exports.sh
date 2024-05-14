@@ -14,7 +14,8 @@ export EXPORTS_F="$SCRIPTS_DIR/exports.sh"     # Path to exports file
 export ALIASES_F="$CONFIG_DIR/.aliases"       # Path to Zsh aliases file
 
 # machine dependent
-export DARWIN_SETTING_F="$CONFIG_DIR/zsh/darwin_settings.zsh"       # Path to macOS-specific Zsh settings file
+export DARWIN_SETTING_D="$CONFIG_DIR/darwin"       # Path to macOS-specific Zsh settings file
+export DARWIN_SETTING_F="$DARWIN_SETTING_D/settings"       # Path to macOS-specific Zsh settings file
 export LINUX_SETTING_F="$CONFIG_DIR/zsh/linux_settings.zsh"       # Path to Linux-specific Zsh settings file
 
 # Oh-My-Zsh setup
