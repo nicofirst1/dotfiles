@@ -1,7 +1,3 @@
-export PATH="$PATH:/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
-export PATH="${PATH:+${PATH}:}/opt/homebrew/opt/fzf/bin"
-
-plugins=($plugins brew macos)
 social() {
     print_usage() {
         printf "Usage: social [options] [arguments]\n"

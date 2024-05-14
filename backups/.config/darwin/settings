@@ -1,0 +1,55 @@
+export PATH="$PATH:/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
+export PATH="${PATH:+${PATH}:}/opt/homebrew/opt/fzf/bin"
+
+plugins=($plugins brew macos)
+
+
+#############################################
+# macOS specific settings
+#############################################
+
+
+############
+# General
+############
+
+# make the doc as small as possible
+defaults write com.apple.dock tilesize -int 36
+# hide it by default
+defaults write com.apple.dock autohide -bool true
+
+# disable animations
+defaults write NSGlobalDomain NSAutomaticWindowAnimationsEnabled -bool false
+
+# disable show suggested and recent apps in dock
+defaults write com.apple.dock show-recents -bool false
+
+
+############
+# Finder
+############
+
+# set new finder window to open in home directory
+defaults write com.apple.finder NewWindowTarget -string "PfHm"
+
+# set open folders in new tabs
+defaults write com.apple.finder FinderSpawnTab -bool true
+
+# set default view style to column
+defaults write com.apple.finder FXPreferredViewStyle -string "clmv"
+
+# remove warning when changing file extension
+defaults write com.apple.finder FXEnableExtensionChangeWarning -bool false
+
+# change default search scope to current folder
+defaults write com.apple.finder FXDefaultSearchScope -string "SCcf"
+
+# show path bar
+defaults write com.apple.finder ShowPathbar -bool true
+
+# show status bar
+defaults write com.apple.finder ShowStatusBar -bool true
+
+
+
+source $DARWIN_SETTING_D/scripts.sh
