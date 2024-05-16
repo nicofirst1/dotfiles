@@ -110,3 +110,25 @@ social() {
         open_multiple_in_new_window "${urls_to_open[@]}"
     fi
 }
+
+
+# Function to merge PDF files
+merge_pdfs() {
+    # Check if at least two arguments are passed
+    if [ "$#" -lt 2 ]; then
+        echo "Usage: merge_pdfs output_file.pdf input1.pdf [input2.pdf ... inputN.pdf]"
+        return 1
+    fi
+
+    # Get the output file name (first argument)
+    output_file="$1"
+    shift
+
+    # Get the list of input PDF files (remaining arguments)
+    input_files=("$@")
+
+    # Merge the PDF files
+    "/System/Library/Automator/Combine PDF Pages.action/Contents/MacOS/join" -o "$output_file" "${input_files[@]}"
+
+    echo "PDF files merged into $output_file"
+}
