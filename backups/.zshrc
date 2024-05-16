@@ -64,7 +64,8 @@ source_if_exists $CONFIG_DIR/zsh/.p10k.zsh
 source_if_exists $ALIASES_F
 
 # Fix background for zsh-autocompletion
-ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=6'
+ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=4'
+
 
 
 # FZF setup
@@ -73,7 +74,7 @@ source_if_exists $CONFIG_DIR/fzf/fzf-fn
 
 
 # the fuck 
-#eval $(thefuck --alias)
+eval "$(thefuck --alias)"
 eval "$(zoxide init zsh)"
 
 source_if_exists $ENTR_CONFIG

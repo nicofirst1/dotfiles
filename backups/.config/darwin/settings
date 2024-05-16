@@ -3,53 +3,114 @@ export PATH="${PATH:+${PATH}:}/opt/homebrew/opt/fzf/bin"
 
 plugins=($plugins brew macos)
 
-
-#############################################
-# macOS specific settings
-#############################################
-
-
-############
-# General
-############
-
-# make the doc as small as possible
-defaults write com.apple.dock tilesize -int 36
-# hide it by default
-defaults write com.apple.dock autohide -bool true
-
-# disable animations
-defaults write NSGlobalDomain NSAutomaticWindowAnimationsEnabled -bool false
-
-# disable show suggested and recent apps in dock
-defaults write com.apple.dock show-recents -bool false
+mac_defaults(){
+    #############################################
+    # macOS specific settings
+    #############################################
 
 
-############
-# Finder
-############
+    ############
+    # General
+    ############
 
-# set new finder window to open in home directory
-defaults write com.apple.finder NewWindowTarget -string "PfHm"
+    defaults write com.apple.dock autohide-delay -float 0
+    defaults write com.apple.dock autohide-time-modifier -int 0
 
-# set open folders in new tabs
-defaults write com.apple.finder FinderSpawnTab -bool true
+    # make the doc as small as possible
+    defaults write com.apple.dock tilesize -int 0
+    # hide it by default
+    defaults write com.apple.dock autohide -bool true
 
-# set default view style to column
-defaults write com.apple.finder FXPreferredViewStyle -string "clmv"
+    # disable animations
+    defaults write NSGlobalDomain NSAutomaticWindowAnimationsEnabled -bool false
 
-# remove warning when changing file extension
-defaults write com.apple.finder FXEnableExtensionChangeWarning -bool false
-
-# change default search scope to current folder
-defaults write com.apple.finder FXDefaultSearchScope -string "SCcf"
-
-# show path bar
-defaults write com.apple.finder ShowPathbar -bool true
-
-# show status bar
-defaults write com.apple.finder ShowStatusBar -bool true
+    # disable show suggested and recent apps in dock
+    defaults write com.apple.dock show-recents -bool false
 
 
+    # Use metric units
+    defaults write NSGlobalDomain AppleMeasurementUnits -string "Centimeters"
+    defaults write NSGlobalDomain AppleMetricUnits -bool true
+    defaults write NSGlobalDomain AppleTemperatureUnit -string "Celsius"
+
+    # Save to disk by default, instead of iCloud
+    defaults write NSGlobalDomain NSDocumentSaveNewDocumentsToCloud -bool false
+
+
+
+    ############
+    # Finder
+    ############
+
+    # set new finder window to open in home directory
+    defaults write com.apple.finder NewWindowTarget -string "PfHm"
+
+    # set open folders in new tabs
+    defaults write com.apple.finder FinderSpawnTab -bool true
+
+    # set default view style to column
+    defaults write com.apple.finder FXPreferredViewStyle -string "clmv"
+
+    # remove warning when changing file extension
+    defaults write com.apple.finder FXEnableExtensionChangeWarning -bool false
+
+    # change default search scope to current folder
+    defaults write com.apple.finder FXDefaultSearchScope -string "SCcf"
+
+    # show path bar
+    defaults write com.apple.finder ShowPathbar -bool true
+
+    # show status bar
+    defaults write com.apple.finder ShowStatusBar -bool true
+
+    # Disable the warning when changing a file extension
+    defaults write com.apple.finder FXEnableExtensionChangeWarning -bool false
+
+    # Avoid creating .DS_Store files on network or USB volumes
+    defaults write com.apple.desktopservices DSDontWriteNetworkStores -bool true
+    defaults write com.apple.desktopservices DSDontWriteUSBStores -bool true
+
+    # Hot corners
+    # Possible values:
+    #  0: no-op
+    #  2: Mission Control
+    #  3: Show application windows
+    #  4: Desktop
+    #  5: Start screen saver
+    #  6: Disable screen saver
+    #  7: Dashboard
+    # 10: Put display to sleep
+    # 11: Launchpad
+    # 12: Notification Center
+    # 13: Lock screen
+    # Top right screen corner → Desktop
+    # defaults write com.apple.dock wvous-tr-corner -int 4
+    # defaults write com.apple.dock wvous-tr-modifier -int 0
+    # Bottom right screen corner → Mission Control
+    defaults write com.apple.dock wvous-br-corner -int 13
+    defaults write com.apple.dock wvous-br-modifier -int 0
+    # Bottom left screen corner
+    # defaults write com.apple.dock wvous-bl-corner -int 0
+    # defaults write com.apple.dock wvous-bl-modifier -int 0
+
+    ###############################################################################
+    # TextEdit                                                                    #
+    ###############################################################################
+
+    # Use plain text mode for new TextEdit documents
+    defaults write com.apple.TextEdit RichText -int 0
+
+    # Open and save files as UTF-8 in TextEdit
+    defaults write com.apple.TextEdit PlainTextEncoding -int 4
+    defaults write com.apple.TextEdit PlainTextEncodingForWrite -int 4
+
+    ###############################################################################
+    # Custom keyboard shortcut                                                        #
+    ###############################################################################
+
+    # open iterm with cmd + option + t
+    defaults write -g NSUserKeyEquivalents -dict-add "Open iTerm" -string "@~t"
+
+}
 
 source $DARWIN_SETTING_D/scripts.sh

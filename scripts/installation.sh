@@ -28,6 +28,7 @@ if ! command -v zsh &>/dev/null; then
         exit 0
     elif [[ "$OSTYPE" == "darwin"* ]]; then
         brew install zsh
+        mac_defaults
     fi
 fi
 
