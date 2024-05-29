@@ -108,8 +108,9 @@ mac_defaults(){
     # Custom keyboard shortcut                                                        #
     ###############################################################################
 
-    # open iterm with cmd + option + t
-    defaults write -g NSUserKeyEquivalents -dict-add "Open iTerm" -string "@~t"
+    # stop play button from opening itunes
+    launchctl unload -w /System/Library/LaunchAgents/com.apple.rcd.plist
+
 
 }
 

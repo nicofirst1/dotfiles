@@ -1,5 +1,3 @@
-
-
 update_latest_link() {
     local file_path="$1"
     local dir_name=$(dirname "$file_path")
@@ -13,7 +11,6 @@ update_latest_link() {
     ln -sf "$file_path" "$dir_name/$job_name-latest.$log_type.log"
 }
 
-
 monitor_log() {
     # Directory to monitor
     local dir_to_monitor="$1"
@@ -25,14 +22,17 @@ monitor_log() {
     fi
 
     # Use find to list existing relevant files and trigger the initial setup of links
-    find "$dir_to_monitor" -type f -regex '[A-z -_]+([0-9]+)\.(err|out)\.log' | while read file; do
-        echo "$file"
+    find "$dir_to_monitor" -type f -regex '.*-[0-9]+\.\(err\|out\)\.log' | while read -r file; do
+        update_latest_link "$file"
     done
-
-    return 0
 
     # Monitor for new files
     echo "Monitoring directory: $dir_to_monitor for new SLURM logs..."
-    find "$dir_to_monitor" -name '*.log' | entr -d bash -c "update_latest_link /_"
+    inotifywait -m -e create --format '%w%f' "$dir_to_monitor" | while read -r new_file; do
+        if [[ "$new_file" =~ .*-[0-9]+\.(err|out)\.log$ ]]; then
+            update_latest_link "$new_file"
+        fi
+    done
 }
+
 # Usage: monitor_log /path/to/directory
