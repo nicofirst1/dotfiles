@@ -198,7 +198,7 @@ install_libevent(){
     # configure and install 
     (
         cd $LIBEVENT_DIR
-        ./configure --prefix=$LOCAL_DIR  --enable-shared
+        ./configure --prefix=$LOCAL_DIR  --enable-shared 
         make
         make install
     )
@@ -256,7 +256,8 @@ install_tmux(){
     (
         cd $REPO_DIR/tmux
         git fetch --unshallow
-        PKG_CONFIG_PATH=$HOME/local/lib/pkgconfig ./configure  --prefix=$LOCAL_DIR
+        ./autogen.sh
+        PKG_CONFIG_PATH="$LOCAL_DIR/lib/pkgconfig" ./configure  --prefix=$LOCAL_DIR
         make
         make install 
     )

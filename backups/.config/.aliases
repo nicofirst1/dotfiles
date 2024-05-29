@@ -41,3 +41,5 @@ fi
 if command -v fzf-tmux &> /dev/null; then
     alias fzf="fzf-tmux"
 fi
+
+alias gcm="git commit -m"
