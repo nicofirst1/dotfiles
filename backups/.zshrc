@@ -51,6 +51,10 @@ plugins=(
 
 source_if_exists $ZSH/oh-my-zsh.sh
 
+# python stuff
+source_if_exists $CONFIG_DIR/python/settings.sh
+
+
 # User configuration
 
 # Agnoster & Powerlevel10k stuff

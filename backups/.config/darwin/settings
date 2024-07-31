@@ -3,6 +3,13 @@ export PATH="${PATH:+${PATH}:}/opt/homebrew/opt/fzf/bin"
 
 plugins=($plugins brew macos)
 
+
+# check if chruby is installed
+chruby_path="/opt/homebrew/opt/chruby/share/chruby/chruby.sh"
+if [ -f $chruby_path ]; then
+    source $chruby_path
+fi
+
 mac_defaults(){
     #############################################
     # macOS specific settings

@@ -27,10 +27,7 @@ if command -v bat &> /dev/null; then
     }
 fi
 
-# check if zoxide is installed
-if command -v z &> /dev/null; then
-    alias cd="z"
-fi
+
 
 # check if tmux is installed
 if command -v tmux &> /dev/null; then
