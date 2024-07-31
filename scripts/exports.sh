@@ -48,3 +48,5 @@ export PATH="$PATH:$LOCAL_DIR/bin" # local bin
 export PATH="$PATH:$LOCAL_DIR/lib" # local lib
 export PATH="$PATH:$CARGO_HOME/bin" # cargo bin
 
+# Poetry setup
+POETRY_VIRTUALENVS_IN_PROJECT=true
