@@ -32,6 +32,14 @@ if ! command -v zsh &>/dev/null; then
     fi
 fi
 
+
+# Install zinit
+if [ ! -d ~/.zinit ]; then
+    sh -c "$(curl -fsSL https://raw.githubusercontent.com/zdharma-continuum/zinit/main/scripts/install.sh)"
+else
+    echo "zinit already installed."
+fi
+
 # Download Oh My Zsh if not already installed
 if [ ! -d $OMZSH_DIR ]; then
     sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"

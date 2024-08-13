@@ -42,6 +42,8 @@ export XDG_CACHE_HOME="$HOME/.cache"
 # Oh-My-Zsh setup
 export OMZSH_DIR="$HOME/.oh-my-zsh" # path to Oh-My-Zsh installation directory
 
+# Zinit
+export ZINIT_HOME="$LOCAL_DIR/share/zinit/zinit.git"
 
 # path exports
 export PATH="$PATH:$LOCAL_DIR/bin" # local bin
