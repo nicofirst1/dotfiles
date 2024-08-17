@@ -371,3 +371,11 @@ source_if_exists() {
         echo "File not found: $1"
     fi
 }
+
+
+
+install_zinit(){
+
+    ZINIT_HOME="" bash -c "$(curl --fail --show-error --silent --location https://raw.githubusercontent.com/zdharma-continuum/zinit/HEAD/scripts/install.sh)"
+    exec zsh
+}
