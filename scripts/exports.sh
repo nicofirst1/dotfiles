@@ -51,4 +51,9 @@ export PATH="$PATH:$LOCAL_DIR/lib" # local lib
 export PATH="$PATH:$CARGO_HOME/bin" # cargo bin
 
 # Poetry setup
-POETRY_VIRTUALENVS_IN_PROJECT=true
+export POETRY_VIRTUALENVS_IN_PROJECT=true
+
+
+# disabling automatic widget re-binding?
+# https://github.com/zsh-users/zsh-autosuggestions/issues/544#issuecomment-640094700
+export ZSH_AUTOSUGGEST_MANUAL_REBIND=flase
