@@ -361,21 +361,20 @@ install_chruby() {
     fi
 }
 
-# Function to source a file if it exists
-# Arguments:
-#   $1: The file path to be sourced
-source_if_exists() {
-    if [ -f "$1" ]; then
-        source "$1"
-    else 
-        echo "File not found: $1"
-    fi
-}
-
 
 
 install_zinit(){
 
     ZINIT_HOME="" bash -c "$(curl --fail --show-error --silent --location https://raw.githubusercontent.com/zdharma-continuum/zinit/HEAD/scripts/install.sh)"
     exec zsh
+}
+
+
+#########################
+#      UTILITIES        #
+#########################
+
+start_ssh_agent() {
+    eval $(ssh-agent -s)
+    ssh-add
 }

@@ -50,15 +50,25 @@ if [[ -f $ZSH_COMPDUMP.zwc && $ZSH_COMPDUMP -nt $ZSH_COMPDUMP.zwc ]]; then
 fi
 compinit -d $ZSH_COMPDUMP
 
-
-
+# Make autosuggestion remember history
+# from here https://github.com/zsh-users/zsh-autosuggestions/issues/645#issuecomment-1452340220
+setopt APPEND_HISTORY
+setopt SHARE_HISTORY
+HISTFILE=$HOME/.zhistory
+SAVEHIST=1000
+HISTSIZE=999
+setopt HIST_EXPIRE_DUPS_FIRST
+setopt EXTENDED_HISTORY
 
 # Load plugins with zinit using Turbo Mode and lazy loading
-zinit ice wait'1' lucid
+zinit ice lucid
 zinit light zsh-users/zsh-autosuggestions
 
 zinit ice wait'1' lucid
 zinit light zsh-users/zsh-syntax-highlighting
+
+zinit ice wait'1' lucid
+zinit light agkozak/zsh-z
 
 zinit ice wait'3' lucid
 zinit light zdharma-continuum/history-search-multi-word
@@ -69,8 +79,6 @@ zinit light zdharma-continuum/history-search-multi-word
 zinit ice wait'1' lucid
 zinit light zsh-users/zsh-completions
 
-zinit ice wait'1' lucid
-zinit light rupa/z
 
 zinit ice wait'2' lucid
 zinit light zdharma-continuum/fast-syntax-highlighting
@@ -102,6 +110,11 @@ ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=4'
 
 # FZF setup
 source "$CONFIG_DIR/fzf/fzf-init"
+
+# if python is installed
+if command -v python3 &> /dev/null; then
+   source $CONFIG_DIR/python/settings.sh
+fi
 
 
 # the fuck 
