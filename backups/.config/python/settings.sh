@@ -6,3 +6,8 @@ if [ -d $HOME/.pyenv ]; then
 fi
 
 
+# Fix uv autocomplete with run python.py
+
+function py() {
+    uv run $1
+}
