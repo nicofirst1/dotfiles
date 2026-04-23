@@ -18,10 +18,6 @@ export DARWIN_SETTING_D="$CONFIG_DIR/darwin"       # Path to macOS-specific Zsh 
 export DARWIN_SETTING_F="$DARWIN_SETTING_D/settings"       # Path to macOS-specific Zsh settings file
 export LINUX_SETTING_F="$CONFIG_DIR/zsh/linux_settings.zsh"       # Path to Linux-specific Zsh settings file
 
-# Oh-My-Zsh setup
-export ZSH="$HOME/.oh-my-zsh"       # Path to Oh-My-Zsh installation directory
-export ZSH_CUSTOM="$ZSH/custom"       # Path to Oh-My-Zsh custom directory
-
 # Entr
 export ENTR_DIR="$CONFIG_DIR/entr"       # Path to the entr repository
 export ENTR_CONFIG="$ENTR_DIR/conf.sh"       # Path to the entr configuration file
@@ -39,9 +35,6 @@ export LC_ALL='en_US.UTF-8';
 export XDG_CONFIG_HOME="$HOME/.config"
 export XDG_CACHE_HOME="$HOME/.cache"
 
-# Oh-My-Zsh setup
-export OMZSH_DIR="$HOME/.oh-my-zsh" # path to Oh-My-Zsh installation directory
-
 # Zinit
 export ZINIT_HOME="$LOCAL_DIR/share/zinit/zinit.git"
 
@@ -56,4 +49,4 @@ export POETRY_VIRTUALENVS_IN_PROJECT=true
 
 # disabling automatic widget re-binding?
 # https://github.com/zsh-users/zsh-autosuggestions/issues/544#issuecomment-640094700
-export ZSH_AUTOSUGGEST_MANUAL_REBIND=flase
+export ZSH_AUTOSUGGEST_MANUAL_REBIND=false
