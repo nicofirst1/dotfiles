@@ -16,7 +16,7 @@ mkdir -p $REPO_DIR
 mkdir -p $LOCAL_DIR
 
 # Add all executables in .local/bin to the PATH
-export PATH="$PATH:$$LOCAL_DIR/bin"
+export PATH="$PATH:$LOCAL_DIR/bin"
 
 # Install Zsh if not installed
 if ! command -v zsh &>/dev/null; then
@@ -39,19 +39,6 @@ if [ ! -d ~/.zinit ]; then
 else
     echo "zinit already installed."
 fi
-
-# Download Oh My Zsh if not already installed
-if [ ! -d $OMZSH_DIR ]; then
-    sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
-else
-    echo "Oh My Zsh already installed."
-fi
-
-# Install Zsh plugins
-zsh_plugins
-
-# Install the Powerlevel10k theme
-git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "$ZSH_CUSTOM/themes/powerlevel10k"
 
 # Copy dotfiles from $DOTFILES_DIR to $HOME using symbolic links
 install_gnustow

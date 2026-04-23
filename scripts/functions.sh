@@ -3,26 +3,13 @@
 # Each function checks the operating system and installs the necessary dependencies accordingly.
 # The script also includes a function for restoring backups using GNU Stow.
 
-# Note: This script assumes the presence of certain environment variables, such as $OSTYPE, $REPO_DIR, $DOTFILES_DIR, and $ZSH_CUSTOM.
+# Note: This script assumes the presence of certain environment variables, such as $OSTYPE, $REPO_DIR, and $DOTFILES_DIR.
 # Make sure to set these variables appropriately before running the script.
 source $HOME/dotfiles/scripts/exports.sh
 
 #########################
 #        ZSH            #
 #########################
-
-# zsh_plugins():
-# This function clones various Zsh plugins from GitHub and installs them in the appropriate directory.
-# It also clones the fzf repository and runs its installation script.
-
-zsh_plugins() {
-    git clone https://github.com/zsh-users/zsh-autosuggestions "$ZSH_CUSTOM/plugins/zsh-autosuggestions"
-    git clone https://github.com/zdharma-continuum/history-search-multi-word "$ZSH_CUSTOM/plugins/history-search-multi-word"
-    git clone https://github.com/wfxr/forgit.git "$ZSH_CUSTOM/plugins/forgit"
-    git clone https://github.com/zsh-users/zsh-syntax-highlighting.git "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting"
-
-
-}
 
 # install_zsh():
 # This function clones the Zsh repository from SourceForge and installs Zsh.

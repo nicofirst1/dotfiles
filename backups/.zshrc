@@ -28,14 +28,6 @@ source "$ZINIT_HOME/zinit.zsh"
 source "$CONFIG_DIR/zsh/.p10k.zsh"
 
 
-# Set name of the theme to load --- if set to "random", it will
-# load a random theme each time oh-my-zsh is loaded.
-ZSH_THEME="powerlevel10k/powerlevel10k"
-
-# Uncomment the following line to use case-sensitive completion.
-CASE_SENSITIVE="true"
-
-
 # Load Powerlevel10k theme with Turbo Mode
 zinit ice depth"1" # git clone depth
 zinit light romkatv/powerlevel10k
