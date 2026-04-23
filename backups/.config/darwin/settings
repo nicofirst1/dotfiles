@@ -112,6 +112,17 @@ mac_defaults(){
     defaults write com.apple.TextEdit PlainTextEncodingForWrite -int 4
 
     ###############################################################################
+    # iTerm2                                                                      #
+    ###############################################################################
+
+    # Load prefs from the stowed folder so the tracked plist becomes the source of
+    # truth. The symlink at ~/.config/darwin/com.googlecode.iterm2.plist points back
+    # into the repo, so iTerm2 reads *and writes* through it — changes made in the
+    # iTerm UI land in the repo automatically.
+    defaults write com.googlecode.iterm2 PrefsCustomFolder -string "$HOME/.config/darwin"
+    defaults write com.googlecode.iterm2 LoadPrefsFromCustomFolder -bool true
+
+    ###############################################################################
     # Custom keyboard shortcut                                                        #
     ###############################################################################
 
