@@ -1,9 +1,10 @@
 #!/bin/bash
 
-# This script is used for installation and setup of dotfiles and related tools.
-# It sets up the necessary environment variables, installs Zsh if not already installed,
-# downloads Oh My Zsh, installs plugins, installs the Powerlevel10k theme,
-# copies dotfiles to the home directory using symbolic links, and creates a machine source file if not present.
+# This script bootstraps a machine from this dotfiles repo.
+# On macOS: installs Homebrew (if missing), applies macOS defaults, installs
+# packages from the Brewfile. On both platforms: installs zsh, zinit, stow,
+# rust + rust CLIs, fzf, stows the backups/ tree to $HOME, and creates
+# ~/.machine.sh for machine-specific config.
 
 # Source the variables file
 source $HOME/dotfiles/scripts/exports.sh
@@ -18,6 +19,21 @@ mkdir -p $LOCAL_DIR
 # Add all executables in .local/bin to the PATH
 export PATH="$PATH:$LOCAL_DIR/bin"
 
+# macOS: ensure Homebrew, apply defaults, restore packages from the Brewfile
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    if ! command -v brew &>/dev/null; then
+        echo "Homebrew not found. Installing..."
+        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    fi
+
+    # applies dock/finder/textedit defaults — defined in darwin/scripts.sh,
+    # which is sourced transitively by DARWIN_SETTING_F
+    source $DARWIN_SETTING_F
+    mac_defaults
+
+    brew bundle install --file=$BACKUP_DIR/.config/darwin/Brewfile
+fi
+
 # Install Zsh if not installed
 if ! command -v zsh &>/dev/null; then
     echo "Zsh not found. Installing..."
@@ -28,7 +44,6 @@ if ! command -v zsh &>/dev/null; then
         exit 0
     elif [[ "$OSTYPE" == "darwin"* ]]; then
         brew install zsh
-        mac_defaults
     fi
 fi
 

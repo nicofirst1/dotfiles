@@ -8,14 +8,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- SwiftBar plugin `wg.5s.sh` — menu-bar indicator for WireGuard home tunnel (ifconfig-based detection, osascript admin-privileges toggle)
+- `.aliases`: WireGuard `wgup`/`wgdown`/`wgstatus` aliases, `cd ...` chain shortcuts, `data-clean` alias for midnight-commander
+- `python/settings.sh`: `py()` wrapping `uv run`
+- `.zshrc`: opencode PATH, gcloud SDK init
+- `installation.sh`: Homebrew bootstrap, unconditional `mac_defaults` on macOS, `brew bundle install` from the tracked Brewfile
 ### Fixed
 - typo `flase` → `false` in `ZSH_AUTOSUGGEST_MANUAL_REBIND` export
 - broken `PATH` line in `installation.sh` (`$$LOCAL_DIR` → `$LOCAL_DIR`)
+- `mac_defaults` only ran when zsh was missing — now runs on every macOS bootstrap
 - stale file references in README (`utils.sh`, `variables.sh`, `backups/zsh/`)
 ### Changed
+- Brewfile synced as new-machine install spec (VSCode extensions removed, taps and formulae aligned with keep-list)
 - README install steps reflect zinit (no longer mention Oh My Zsh)
 ### Removed
 - Oh My Zsh scaffolding: `ZSH`/`ZSH_CUSTOM`/`OMZSH_DIR` exports, `ZSH_THEME`/`CASE_SENSITIVE` vars, `zsh_plugins()` function, OMZ + p10k install blocks in `installation.sh` (zinit handles plugins and theme)
+- `wtp` hook from `.zshrc` and `satococoa/tap` from Brewfile
 
 
 
