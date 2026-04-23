@@ -27,7 +27,23 @@ if command -v bat &> /dev/null; then
     }
 fi
 
+# Path aliases
+cd() {
+    if [[ $1 == "..." ]]; then
+        builtin cd ../../
+    elif [[ $1 == "...." ]]; then
+        builtin cd ../../../
+    elif [[ $1 == "....." ]]; then
+        builtin cd ../../../../
+    else
+        builtin cd "$@"
+    fi
+}
 
+# Midnight Commander aliased to `data-clean` (minio's `mc` owns the default name)
+if [[ -x /opt/homebrew/opt/midnight-commander/bin/mc ]]; then
+    alias data-clean="/opt/homebrew/opt/midnight-commander/bin/mc"
+fi
 
 # check if tmux is installed
 if command -v tmux &> /dev/null; then
@@ -42,3 +58,11 @@ fi
 alias gcm="git commit -m"
 
 alias afa="autoflake --in-place --remove-unused-variables --remove-all-unused-imports  --recursive"
+
+# WireGuard tunnel (FritzBox home, split-tunnel — only 192.168.178.0/24)
+if command -v wg-quick &> /dev/null; then
+    _WG_CONF="$HOME/Documents/wg_config.conf"
+    alias wgup="sudo wg-quick up $_WG_CONF"
+    alias wgdown="sudo wg-quick down $_WG_CONF"
+    alias wgstatus="sudo wg show"
+fi

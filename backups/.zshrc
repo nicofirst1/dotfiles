@@ -122,4 +122,15 @@ source $MACHINE_SOURCE
 # Run zinit cdreplay to set up completions after plugins are loaded
 zinit cdreplay -q
 
+
+
 #zprof
+
+# opencode
+export PATH=/Users/nbrandizzi/.opencode/bin:$PATH
+
+# The next line updates PATH for the Google Cloud SDK.
+if [ -f '/Users/nbrandizzi/Downloads/google-cloud-sdk/path.zsh.inc' ]; then . '/Users/nbrandizzi/Downloads/google-cloud-sdk/path.zsh.inc'; fi
+
+# The next line enables shell command completion for gcloud.
+if [ -f '/Users/nbrandizzi/Downloads/google-cloud-sdk/completion.zsh.inc' ]; then . '/Users/nbrandizzi/Downloads/google-cloud-sdk/completion.zsh.inc'; fi
