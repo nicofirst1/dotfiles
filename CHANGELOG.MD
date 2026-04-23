@@ -8,11 +8,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+### Fixed
+### Changed
+### Removed
+
+
+
+## [v0.2.0] - 2026-04-23
+
+### Added
 - SwiftBar plugin `wg.5s.sh` — menu-bar indicator for WireGuard home tunnel (ifconfig-based detection, osascript admin-privileges toggle)
 - `.aliases`: WireGuard `wgup`/`wgdown`/`wgstatus` aliases, `cd ...` chain shortcuts, `data-clean` alias for midnight-commander
 - `python/settings.sh`: `py()` wrapping `uv run`
 - `.zshrc`: opencode PATH, gcloud SDK init
 - `installation.sh`: Homebrew bootstrap, unconditional `mac_defaults` on macOS, `brew bundle install` from the tracked Brewfile
+- iTerm2 custom prefs folder setup in `mac_defaults` — plist loads from and writes to the stowed copy, so UI changes persist in the repo
 ### Fixed
 - typo `flase` → `false` in `ZSH_AUTOSUGGEST_MANUAL_REBIND` export
 - broken `PATH` line in `installation.sh` (`$$LOCAL_DIR` → `$LOCAL_DIR`)
