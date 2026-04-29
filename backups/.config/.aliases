@@ -40,9 +40,13 @@ cd() {
     fi
 }
 
-# Midnight Commander aliased to `data-clean` (minio's `mc` owns the default name)
+# Midnight Commander aliased to `data-clean` (minio's `mc` owns the default name).
+# On macOS the homebrew keg-only install lives under /opt/homebrew; on Linux the
+# distro package puts mc on PATH directly, so no aliasing is needed there.
 if [[ -x /opt/homebrew/opt/midnight-commander/bin/mc ]]; then
     alias data-clean="/opt/homebrew/opt/midnight-commander/bin/mc"
+elif command -v mc &> /dev/null; then
+    alias data-clean="mc"
 fi
 
 # check if tmux is installed

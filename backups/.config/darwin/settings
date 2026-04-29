@@ -1,9 +1,6 @@
 export PATH="$PATH:/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
 export PATH="${PATH:+${PATH}:}/opt/homebrew/opt/fzf/bin"
 
-plugins=($plugins brew macos)
-
-
 # check if chruby is installed
 chruby_path="/opt/homebrew/opt/chruby/share/chruby/chruby.sh"
 if [ -f $chruby_path ]; then

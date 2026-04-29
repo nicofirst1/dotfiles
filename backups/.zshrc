@@ -3,7 +3,12 @@
 ######################################
 #zmodload zsh/zprof
 
-source $HOME/dotfiles/scripts/exports.sh
+# Derive DOTFILES_DIR from this file's resolved location (handles the stow
+# symlink), so the repo can live anywhere without hardcoding a path.
+if [[ -z "$DOTFILES_DIR" ]]; then
+    export DOTFILES_DIR="${${(%):-%x}:A:h:h}"
+fi
+source "$DOTFILES_DIR/scripts/exports.sh"
 source $UTILS_F
 
 
@@ -109,13 +114,16 @@ if command -v python3 &> /dev/null; then
 fi
 
 
-# the fuck 
-eval "$(thefuck --alias)"
+# thefuck — gated on both presence AND a working invocation, since Python 3.14
+# dropped `distutils` and breaks unmaintained thefuck installs at import time.
+if command -v thefuck &> /dev/null && thefuck --alias &> /dev/null; then
+    eval "$(thefuck --alias)"
+fi
 
 #source $ENTR_CONFIG
 
 # source machine dependent stuff, for example conda
-source $MACHINE_SOURCE
+[ -f "$MACHINE_SOURCE" ] && source "$MACHINE_SOURCE"
 
 [ -f "${XDG_CONFIG_HOME:-$HOME/.config}"/fzf/fzf.zsh ] && source "${XDG_CONFIG_HOME:-$HOME/.config}"/fzf/fzf.zsh
 
@@ -127,10 +135,8 @@ zinit cdreplay -q
 #zprof
 
 # opencode
-export PATH=/Users/nbrandizzi/.opencode/bin:$PATH
+[ -d "$HOME/.opencode/bin" ] && export PATH="$HOME/.opencode/bin:$PATH"
 
-# The next line updates PATH for the Google Cloud SDK.
-if [ -f '/Users/nbrandizzi/Downloads/google-cloud-sdk/path.zsh.inc' ]; then . '/Users/nbrandizzi/Downloads/google-cloud-sdk/path.zsh.inc'; fi
-
-# The next line enables shell command completion for gcloud.
-if [ -f '/Users/nbrandizzi/Downloads/google-cloud-sdk/completion.zsh.inc' ]; then . '/Users/nbrandizzi/Downloads/google-cloud-sdk/completion.zsh.inc'; fi
+# Google Cloud SDK (only present on the mac install — path resolves at runtime)
+if [ -f "$HOME/Downloads/google-cloud-sdk/path.zsh.inc" ]; then . "$HOME/Downloads/google-cloud-sdk/path.zsh.inc"; fi
+if [ -f "$HOME/Downloads/google-cloud-sdk/completion.zsh.inc" ]; then . "$HOME/Downloads/google-cloud-sdk/completion.zsh.inc"; fi
