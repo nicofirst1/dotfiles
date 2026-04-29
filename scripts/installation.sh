@@ -6,8 +6,10 @@
 # rust + rust CLIs, fzf, stows the backups/ tree to $HOME, and creates
 # ~/.machine.sh for machine-specific config.
 
-# Source the variables file
-source $HOME/dotfiles/scripts/exports.sh
+# Source the variables file (derive its location so the repo works anywhere)
+_install_self="$(readlink -f "${BASH_SOURCE[0]}")"
+source "$(dirname "$_install_self")/exports.sh"
+unset _install_self
 
 # Source the utility functions file
 source $UTILS_F
@@ -34,11 +36,44 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     brew bundle install --file=$BACKUP_DIR/.config/darwin/Brewfile
 fi
 
-# Install Zsh if not installed
+# Linux (Debian/Ubuntu): install the same shell-experience packages via apt that
+# the Brewfile installs on macOS. Skipped on other distros — extend as needed.
+if [[ "$OSTYPE" == "linux-gnu"* ]] && command -v apt-get &>/dev/null; then
+    echo "Installing Linux packages via apt..."
+    sudo apt-get update
+    # Hard requirements — install fails if any of these are missing.
+    sudo apt-get install -y \
+        zsh stow \
+        build-essential ca-certificates curl wget \
+        git gnupg gh \
+        ripgrep jq tree htop ncdu \
+        tmux fzf \
+        python3 python3-pip python3-venv pipx \
+        xclip \
+        bat lsd zoxide
+    # Nice-to-haves — install best-effort, one at a time so a missing package
+    # in the user's repos (e.g. mc on some distros) doesn't fail the whole step.
+    for pkg in mc wireguard-tools ffmpeg; do
+        sudo apt-get install -y "$pkg" || echo "warn: skipped $pkg (not available)"
+    done
+    # Debian/Ubuntu ships bat as `batcat` to avoid a name clash. Expose it as
+    # `bat` so the .aliases check (`command -v bat`) and downstream tools work.
+    if command -v batcat &>/dev/null && ! command -v bat &>/dev/null; then
+        mkdir -p "$LOCAL_DIR/bin"
+        ln -sf "$(command -v batcat)" "$LOCAL_DIR/bin/bat"
+    fi
+    # thefuck ships on PyPI; pipx gives an isolated install on PATH.
+    if ! command -v thefuck &>/dev/null; then
+        pipx ensurepath >/dev/null 2>&1 || true
+        pipx install thefuck || echo "warn: thefuck install failed; continuing"
+    fi
+fi
+
+# Install Zsh if still missing (e.g. non-apt Linux, or apt step skipped)
 if ! command -v zsh &>/dev/null; then
     echo "Zsh not found. Installing..."
     if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        echo "Zsh not found installing from source"
+        echo "Zsh not found, installing from source"
         install_zsh
         echo "Zsh installed, please restart your terminal."
         exit 0
@@ -63,7 +98,7 @@ stow_restore
 install_rust
 install_rust_plugins
 
-# install fzf
+# install fzf (skipped if apt already provided it on Linux)
 install_fzf
 
 # Create the machine source file if not present

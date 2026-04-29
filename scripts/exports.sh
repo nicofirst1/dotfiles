@@ -1,6 +1,17 @@
 # Set up directories
 export REPO_DIR="$HOME/repos"       # Directory for storing repositories
-export DOTFILES_DIR="$HOME/dotfiles"       # Directory for storing dotfiles
+
+# DOTFILES_DIR: derived from this file's own location so the repo works wherever
+# it's cloned. Honors a pre-set DOTFILES_DIR if the caller already exported one.
+if [[ -z "$DOTFILES_DIR" ]]; then
+    _exports_self="${BASH_SOURCE[0]:-${(%):-%x}}"
+    if [[ -n "$ZSH_VERSION" ]]; then
+        export DOTFILES_DIR="${_exports_self:A:h:h}"
+    else
+        export DOTFILES_DIR="$(cd "$(dirname "$(readlink -f "$_exports_self")")/.." && pwd)"
+    fi
+    unset _exports_self
+fi
 export SCRIPTS_DIR="$DOTFILES_DIR/scripts"       # Directory for storing scripts
 export BACKUP_DIR="$DOTFILES_DIR/backups"       # Directory for storing backups
 export MACHINE_SOURCE="$HOME/.machine.sh"       # Path to machine-specific configuration file
@@ -35,8 +46,9 @@ export LC_ALL='en_US.UTF-8';
 export XDG_CONFIG_HOME="$HOME/.config"
 export XDG_CACHE_HOME="$HOME/.cache"
 
-# Zinit
-export ZINIT_HOME="$LOCAL_DIR/share/zinit/zinit.git"
+# Zinit — the official installer clones into share/zinit/zinit.git/zinit.git
+# (the outer zinit.git is its own data dir, the inner one is the git checkout).
+export ZINIT_HOME="$LOCAL_DIR/share/zinit/zinit.git/zinit.git"
 
 # path exports
 export PATH="$PATH:$LOCAL_DIR/bin" # local bin

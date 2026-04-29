@@ -5,7 +5,9 @@
 
 # Note: This script assumes the presence of certain environment variables, such as $OSTYPE, $REPO_DIR, and $DOTFILES_DIR.
 # Make sure to set these variables appropriately before running the script.
-source $HOME/dotfiles/scripts/exports.sh
+_functions_self="$(readlink -f "${BASH_SOURCE[0]:-${(%):-%x}}")"
+source "$(dirname "$_functions_self")/exports.sh"
+unset _functions_self
 
 #########################
 #        ZSH            #
@@ -126,34 +128,43 @@ install_rust() {
     # Check if Rust is installed
     if ! command -v rustc &>/dev/null; then
         echo "Rust not found. Installing..."
-        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+        # `-s -- -y` forwards flags to rustup-init so it skips the interactive
+        # prompt — required when running from non-interactive bootstraps.
+        # `--default-toolchain stable` is set explicitly because some rustup
+        # builds otherwise leave the default unset, requiring a manual
+        # `rustup default stable` before any toolchain command works.
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | \
+            sh -s -- -y --no-modify-path --default-toolchain stable
     fi
 
+    # Make rustc/cargo available in this shell session for the plugin install
+    # that runs immediately after, even on a fresh install.
+    [ -f "$CARGO_HOME/env" ] && source "$CARGO_HOME/env"
 }
 
 # install_rust_plugins():
-# This function installs various Rust plugins using Cargo, the Rust package manager.
-# It first checks if Rust is installed, and then installs lsd, bat, and zoxide.
+# Installs CLI rewrites in Rust via cargo — but skips any tool that's already
+# on PATH (e.g. apt-installed lsd/bat/zoxide on Linux), since cargo from-source
+# builds add ~5 min each.
 install_rust_plugins() {
 
     # Check if Rust is installed
     install_rust
 
-    # Install lsd
-    cargo install lsd
+    cargo_install_if_missing() {
+        local bin="$1" crate="$2"
+        shift 2
+        if command -v "$bin" &>/dev/null; then
+            echo "$bin already installed, skipping cargo build"
+        else
+            cargo install "$@" "$crate"
+        fi
+    }
 
-    # Install bat
-    cargo install --locked bat
-
-    # install z
-    cargo install zoxide --locked
-
-    # install tldr
-    cargo install tlrc
-
-
-    
-
+    cargo_install_if_missing lsd     lsd     --locked
+    cargo_install_if_missing bat     bat     --locked
+    cargo_install_if_missing zoxide  zoxide  --locked
+    cargo_install_if_missing tldr    tlrc    --locked
 }
 
 
@@ -212,12 +223,12 @@ install_ncurses(){
 
     ncurses_dir=$REPO_DIR/ncurses
 
-    mkdir -p $HOME/local/lib/pkgconfig
+    mkdir -p $LOCAL_DIR/lib/pkgconfig
 
-    # configure and install 
+    # configure and install
     (
         cd $ncurses_dir
-        ./configure --prefix=$LOCAL_DIR --with-shared --with-termlib --enable-pc-files --with-pkg-config-libdir=$HOME/local/lib/pkgconfig
+        ./configure --prefix=$LOCAL_DIR --with-shared --with-termlib --enable-pc-files --with-pkg-config-libdir=$LOCAL_DIR/lib/pkgconfig
         make
         make install
     )
@@ -322,8 +333,8 @@ install_chruby() {
         cd $REPO_DIR
         curl -fsSL https://github.com/rbenv/rbenv-installer/raw/HEAD/bin/rbenv-installer | bash
 
-        # Download chruby
-        curl https://github.com/postmodern/chruby/releases/download/v0.3.9/chruby-0.3.9.tar.gz
+        # Download chruby (-LO follows redirects and saves to file rather than stdout)
+        curl -LO https://github.com/postmodern/chruby/releases/download/v0.3.9/chruby-0.3.9.tar.gz
         tar -xzvf chruby-0.3.9.tar.gz
         cd chruby-0.3.9/
         make install PREFIX=$REPO_DIR/chruby
