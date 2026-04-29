@@ -275,6 +275,51 @@ install_tmux(){
 
 
 #########################
+#     NERD FONTS        #
+#########################
+
+# install_nerd_font():
+# Powerlevel10k's prompt uses Nerd Font glyphs (the four MesloLGS NF files).
+# On macOS users typically install via brew cask; on Linux there's no
+# distro-standard package, so drop them into the user's fontconfig dir and
+# refresh the cache. After this the user still has to point their terminal
+# emulator at "MesloLGS NF" — that part can't be automated portably.
+install_nerd_font() {
+    local font_dir
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        font_dir="$HOME/Library/Fonts"
+    else
+        font_dir="$HOME/.local/share/fonts"
+    fi
+    mkdir -p "$font_dir"
+
+    # Skip if already installed (fontconfig on linux, or file presence on mac).
+    if [[ "$OSTYPE" != "darwin"* ]] && fc-list 2>/dev/null | grep -q 'MesloLGS NF'; then
+        echo "MesloLGS NF already installed, skipping"
+        return
+    fi
+    if [[ "$OSTYPE" == "darwin"* ]] && [[ -f "$font_dir/MesloLGS NF Regular.ttf" ]]; then
+        echo "MesloLGS NF already installed, skipping"
+        return
+    fi
+
+    local base="https://github.com/romkatv/powerlevel10k-media/raw/master"
+    for variant in "Regular" "Bold" "Italic" "Bold%20Italic"; do
+        local pretty="${variant//%20/ }"
+        curl -fsSL -o "$font_dir/MesloLGS NF ${pretty}.ttf" \
+            "$base/MesloLGS%20NF%20${variant}.ttf"
+    done
+
+    # Linux only — fontconfig needs a refresh; macOS picks up new fonts on its own.
+    if [[ "$OSTYPE" != "darwin"* ]] && command -v fc-cache &>/dev/null; then
+        fc-cache -f "$font_dir"
+    fi
+
+    echo "MesloLGS NF installed to $font_dir."
+    echo "Set your terminal emulator's font to 'MesloLGS NF' to see Powerlevel10k icons."
+}
+
+#########################
 #        FZF            #
 #########################
 
