@@ -101,6 +101,9 @@ install_rust_plugins
 # install fzf (skipped if apt already provided it on Linux)
 install_fzf
 
+# install MesloLGS NF so Powerlevel10k's prompt glyphs render
+install_nerd_font
+
 # Create the machine source file if not present
 if [ ! -f "$MACHINE_SOURCE" ]; then
     touch "$MACHINE_SOURCE"
