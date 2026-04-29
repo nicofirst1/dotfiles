@@ -41,31 +41,41 @@ fi
 if [[ "$OSTYPE" == "linux-gnu"* ]] && command -v apt-get &>/dev/null; then
     echo "Installing Linux packages via apt..."
     sudo apt-get update
-    # Hard requirements — install fails if any of these are missing.
+    # Hard requirements — install fails if any of these are missing. Mirrors
+    # the set of CLI tools the macOS Brewfile installs that are needed for the
+    # core shell experience (zinit + p10k + .aliases assumptions).
     sudo apt-get install -y \
         zsh stow \
         build-essential ca-certificates curl wget \
-        git gnupg gh \
+        git git-lfs git-delta gnupg gh \
         ripgrep jq tree htop ncdu \
         tmux fzf \
         python3 python3-pip python3-venv pipx \
         xclip \
-        bat lsd zoxide
+        bat lsd zoxide \
+        nodejs sshpass
     # Nice-to-haves — install best-effort, one at a time so a missing package
     # in the user's repos (e.g. mc on some distros) doesn't fail the whole step.
-    for pkg in mc wireguard-tools ffmpeg; do
+    for pkg in mc wireguard-tools ffmpeg autojump cowsay fortune-mod lolcat glab yarnpkg; do
         sudo apt-get install -y "$pkg" || echo "warn: skipped $pkg (not available)"
     done
-    # Debian/Ubuntu ships bat as `batcat` to avoid a name clash. Expose it as
-    # `bat` so the .aliases check (`command -v bat`) and downstream tools work.
+    # Debian/Ubuntu renames a couple of binaries to avoid clashes; symlink
+    # them back to the names everyone expects so .aliases and downstream tools
+    # work the same as on the macOS side.
+    mkdir -p "$LOCAL_DIR/bin"
     if command -v batcat &>/dev/null && ! command -v bat &>/dev/null; then
-        mkdir -p "$LOCAL_DIR/bin"
         ln -sf "$(command -v batcat)" "$LOCAL_DIR/bin/bat"
     fi
-    # thefuck ships on PyPI; pipx gives an isolated install on PATH.
+    if command -v yarnpkg &>/dev/null && ! command -v yarn &>/dev/null; then
+        ln -sf "$(command -v yarnpkg)" "$LOCAL_DIR/bin/yarn"
+    fi
+    # PyPI tools via pipx — isolated venvs that drop binaries on PATH.
+    pipx ensurepath >/dev/null 2>&1 || true
     if ! command -v thefuck &>/dev/null; then
-        pipx ensurepath >/dev/null 2>&1 || true
         pipx install thefuck || echo "warn: thefuck install failed; continuing"
+    fi
+    if ! command -v uv &>/dev/null; then
+        pipx install uv || echo "warn: uv install failed; continuing"
     fi
 fi
 
