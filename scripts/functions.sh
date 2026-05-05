@@ -236,41 +236,38 @@ install_ncurses(){
 
 install_tmux(){
 
-    # check if installed
-    if command -v tmux &>/dev/null; then
-        echo "tmux is already installed."
-        return
+    # Build tmux from source only when the package manager didn't already
+    # provide it (apt covers the Linux path; brew covers macOS).
+    if ! command -v tmux &>/dev/null; then
+        install_libevent
+        install_ncurses
+
+        git clone --depth 1 https://github.com/tmux/tmux.git $REPO_DIR/tmux
+
+        (
+            cd $REPO_DIR/tmux
+            git fetch --unshallow
+            ./autogen.sh
+            PKG_CONFIG_PATH="$LOCAL_DIR/lib/pkgconfig" ./configure  --prefix=$LOCAL_DIR
+            make
+            make install
+        )
+    else
+        echo "tmux is already installed ($(tmux -V))."
     fi
 
-    # install dependencies
-    install_libevent    
-    install_ncurses
-
-
-    # tmux install 
-
-    git clone --depth 1 https://github.com/tmux/tmux.git $REPO_DIR/tmux
-
-    (
-        cd $REPO_DIR/tmux
-        git fetch --unshallow
-        ./autogen.sh
-        PKG_CONFIG_PATH="$LOCAL_DIR/lib/pkgconfig" ./configure  --prefix=$LOCAL_DIR
-        make
-        make install 
-    )
-
-
-    # oh-my-tmux install
-    git clone https://github.com/gpakosz/.tmux.git $REPO_DIR/oh-my-tmux
-    mkdir -p "$CONFIG_DIR/tmux"
-    ln -s "$REPO_DIR/oh-my-tmux/.tmux.conf" "$CONFIG_DIR/tmux/tmux.conf"
-
-    # tpm install
-    git clone https://github.com/tmux-plugins/tpm $REPO_DIR/tmux/plugins/tpm
-
-
-
+    # oh-my-tmux config — clone if missing, then symlink the main .tmux.conf
+    # to ~/.tmux.conf. We deliberately use the legacy path (not XDG) because
+    # ~/.config/tmux/ is itself a stow symlink into this repo: anything
+    # dropped there pollutes the working tree. With ~/.tmux.conf, oh-my-tmux
+    # also picks ~/.tmux/plugins/ as TMUX_PLUGIN_MANAGER_PATH automatically
+    # (see oh-my-tmux .tmux.conf line ~1815), keeping cloned plugins out of
+    # the stow target. tmux.conf.local stays stowed at
+    # ~/.config/tmux/tmux.conf.local — oh-my-tmux source-files it via XDG.
+    if [ ! -d "$REPO_DIR/oh-my-tmux" ]; then
+        git clone https://github.com/gpakosz/.tmux.git "$REPO_DIR/oh-my-tmux"
+    fi
+    ln -sfn "$REPO_DIR/oh-my-tmux/.tmux.conf" "$HOME/.tmux.conf"
 }
 
 
