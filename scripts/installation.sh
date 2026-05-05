@@ -114,6 +114,35 @@ install_fzf
 # install MesloLGS NF so Powerlevel10k's prompt glyphs render
 install_nerd_font
 
+# tmux + oh-my-tmux: tmux gives us pane splits (Ptyxis can't), and the
+# config drives 'prefix |' / 'prefix -' bindings used on both platforms.
+install_tmux
+
+# Ptyxis (GNOME terminal): match the iTerm2 profile — Catppuccin Macchiato
+# palette + MesloLGS NF font so colors and Powerlevel10k glyphs line up with
+# the macOS setup. Also launch tmux on each new tab/window so Ctrl+Shift+T
+# drops straight into a tmux session (where pane splits live). No-op if
+# Ptyxis or gsettings isn't on the box.
+if [[ "$OSTYPE" == "linux-gnu"* ]] && command -v ptyxis &>/dev/null && command -v gsettings &>/dev/null; then
+    PTYXIS_PROFILE_UUID="$(gsettings get org.gnome.Ptyxis default-profile-uuid 2>/dev/null | tr -d \')"
+    if [ -n "$PTYXIS_PROFILE_UUID" ]; then
+        PTYXIS_PROFILE_PATH="/org/gnome/Ptyxis/Profiles/$PTYXIS_PROFILE_UUID/"
+        gsettings set org.gnome.Ptyxis.Profile:"$PTYXIS_PROFILE_PATH" palette 'Catppuccin Macchiato' || true
+        gsettings set org.gnome.Ptyxis font-name 'MesloLGS NF 13' || true
+        gsettings set org.gnome.Ptyxis use-system-font false || true
+        # Start each new Ptyxis tab/window inside its own tmux session so
+        # `prefix |` / `prefix -` splits work out of the box. Each tab is
+        # an independent session — splits live inside the tab.
+        gsettings set org.gnome.Ptyxis.Profile:"$PTYXIS_PROFILE_PATH" custom-command 'tmux' || true
+        gsettings set org.gnome.Ptyxis.Profile:"$PTYXIS_PROFILE_PATH" use-custom-command true || true
+        # Close-tab on Ctrl+W to match the iTerm Cmd+W muscle memory.
+        # Trade-off: zsh's ^W (backward-kill-word) is now intercepted by
+        # Ptyxis — Alt+Backspace (bound in linux_settings.zsh) replaces it.
+        gsettings set org.gnome.Ptyxis.Shortcuts close-tab '<ctrl>w' || true
+        echo "Ptyxis: applied Catppuccin Macchiato palette + MesloLGS NF 13 font + tmux launcher + Ctrl+W close-tab"
+    fi
+fi
+
 # Create the machine source file if not present
 if [ ! -f "$MACHINE_SOURCE" ]; then
     touch "$MACHINE_SOURCE"

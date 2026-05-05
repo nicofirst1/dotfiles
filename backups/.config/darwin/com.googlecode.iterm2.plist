@@ -4375,7 +4375,7 @@
 			<key>Columns</key>
 			<integer>80</integer>
 			<key>Command</key>
-			<string></string>
+			<string>tmux</string>
 			<key>Cursor Color</key>
 			<dict>
 				<key>Alpha Component</key>
@@ -4418,7 +4418,7 @@
 				<real>0.14117647058823529</real>
 			</dict>
 			<key>Custom Command</key>
-			<string>No</string>
+			<string>Yes</string>
 			<key>Custom Directory</key>
 			<string>Recycle</string>
 			<key>Custom Locale</key>

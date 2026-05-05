@@ -83,24 +83,24 @@ tmux_conf_24b_colour=auto
 #   - tmux_conf_theme_synchronized
 tmux_conf_theme=enabled
 
-# default theme
-tmux_conf_theme_colour_1="#080808"    # dark gray
-tmux_conf_theme_colour_2="#303030"    # gray
-tmux_conf_theme_colour_3="#8a8a8a"    # light gray
-tmux_conf_theme_colour_4="#00afff"    # light blue
-tmux_conf_theme_colour_5="#ffff00"    # yellow
-tmux_conf_theme_colour_6="#080808"    # dark gray
-tmux_conf_theme_colour_7="#e4e4e4"    # white
-tmux_conf_theme_colour_8="#080808"    # dark gray
-tmux_conf_theme_colour_9="#ffff00"    # yellow
-tmux_conf_theme_colour_10="#ff00af"   # pink
-tmux_conf_theme_colour_11="#5fff00"   # green
-tmux_conf_theme_colour_12="#8a8a8a"   # light gray
-tmux_conf_theme_colour_13="#e4e4e4"   # white
-tmux_conf_theme_colour_14="#080808"   # dark gray
-tmux_conf_theme_colour_15="#080808"   # dark gray
-tmux_conf_theme_colour_16="#d70000"   # red
-tmux_conf_theme_colour_17="#e4e4e4"   # white
+# Catppuccin Macchiato — mirrors the iTerm/Ptyxis terminal palette
+tmux_conf_theme_colour_1="#1e2030"    # mantle           - status bar bg
+tmux_conf_theme_colour_2="#494d64"    # surface1         - inactive borders
+tmux_conf_theme_colour_3="#a5adcb"    # subtext0         - inactive text
+tmux_conf_theme_colour_4="#8aadf4"    # blue             - active accent
+tmux_conf_theme_colour_5="#f5a97f"    # peach            - message/alert bg
+tmux_conf_theme_colour_6="#1e2030"    # mantle           - dark fg on accent
+tmux_conf_theme_colour_7="#cad3f5"    # text
+tmux_conf_theme_colour_8="#1e2030"    # mantle
+tmux_conf_theme_colour_9="#8aadf4"    # blue             - status_left section 1 bg
+tmux_conf_theme_colour_10="#363a4f"   # surface0         - status_left section 2 bg
+tmux_conf_theme_colour_11="#1e2030"   # mantle
+tmux_conf_theme_colour_12="#cad3f5"   # text
+tmux_conf_theme_colour_13="#cad3f5"   # text
+tmux_conf_theme_colour_14="#1e2030"   # mantle           - dark fg on accent
+tmux_conf_theme_colour_15="#363a4f"   # surface0         - status_right section 3 bg
+tmux_conf_theme_colour_16="#494d64"   # surface1         - status_right section 2 bg
+tmux_conf_theme_colour_17="#8aadf4"   # blue             - status_right section 1 bg (hostname)
 
 # default theme (ansi)
 #tmux_conf_theme_colour_1="colour0"
@@ -230,15 +230,11 @@ tmux_conf_theme_window_status_last_fg="$tmux_conf_theme_colour_4"
 tmux_conf_theme_window_status_last_bg="$tmux_conf_theme_colour_2"
 tmux_conf_theme_window_status_last_attr="none"
 
-# status left/right sections separators
-tmux_conf_theme_left_separator_main=""
-tmux_conf_theme_left_separator_sub="|"
-tmux_conf_theme_right_separator_main=""
-tmux_conf_theme_right_separator_sub="|"
-#tmux_conf_theme_left_separator_main='\uE0B0'  # /!\ you don't need to install Powerline
-#tmux_conf_theme_left_separator_sub='\uE0B1'   #   you only need fonts patched with
-#tmux_conf_theme_right_separator_main='\uE0B2' #   Powerline symbols or the standalone
-#tmux_conf_theme_right_separator_sub='\uE0B3'  #   PowerlineSymbols.otf font, see README.md
+# status left/right sections separators \u2014 powerline glyphs from MesloLGS NF
+tmux_conf_theme_left_separator_main='\uE0B0'
+tmux_conf_theme_left_separator_sub='\uE0B1'
+tmux_conf_theme_right_separator_main='\uE0B2'
+tmux_conf_theme_right_separator_sub='\uE0B3'
 
 # status left/right content:
 #   - separate main sections with "|"
