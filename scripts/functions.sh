@@ -268,6 +268,12 @@ install_tmux(){
         git clone https://github.com/gpakosz/.tmux.git "$REPO_DIR/oh-my-tmux"
     fi
     ln -sfn "$REPO_DIR/oh-my-tmux/.tmux.conf" "$HOME/.tmux.conf"
+    # oh-my-tmux discovers its local-overrides file as "$TMUX_CONF.local",
+    # which with the legacy main path means $HOME/.tmux.conf.local. Our
+    # actual file is stowed at $XDG_CONFIG_HOME/tmux/tmux.conf.local, so
+    # bridge with a symlink — keeps the source-of-truth in the stow tree
+    # while letting oh-my-tmux find it at the path it expects.
+    ln -sfn "$CONFIG_DIR/tmux/tmux.conf.local" "$HOME/.tmux.conf.local"
 }
 
 

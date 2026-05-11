@@ -51,7 +51,7 @@ if [[ "$OSTYPE" == "linux-gnu"* ]] && command -v apt-get &>/dev/null; then
         ripgrep jq tree htop ncdu \
         tmux fzf \
         python3 python3-pip python3-venv pipx \
-        xclip \
+        xclip wl-clipboard \
         bat lsd zoxide \
         nodejs sshpass
     # Nice-to-haves — install best-effort, one at a time so a missing package
