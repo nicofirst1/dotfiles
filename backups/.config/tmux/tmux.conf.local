@@ -412,6 +412,13 @@ bind -n M-Down select-pane -D
 # Increase tmux messages display duration from 750ms to 4s
 set -g display-time 4000
 
+# Pass extended keys (Shift+Enter, Ctrl+Shift+*, etc.) through to inner apps
+# like Claude Code and neovim. oh-my-tmux's conditional auto-enable doesn't
+# fire here because TERM_PROGRAM is clobbered to "tmux" by the outer tmux
+# before the conditional reads it.
+set -s extended-keys always
+set -as terminal-features 'xterm*:extkeys'
+
 
 # -- tpm -----------------------------------------------------------------------
 
