@@ -46,9 +46,14 @@ export LC_ALL='en_US.UTF-8';
 export XDG_CONFIG_HOME="$HOME/.config"
 export XDG_CACHE_HOME="$HOME/.cache"
 
-# Zinit — the official installer clones into share/zinit/zinit.git/zinit.git
-# (the outer zinit.git is its own data dir, the inner one is the git checkout).
-export ZINIT_HOME="$LOCAL_DIR/share/zinit/zinit.git/zinit.git"
+# Zinit — installer layout varies: the canonical install.sh clones to
+# share/zinit/zinit.git, but some installs end up nested as zinit.git/zinit.git.
+# Prefer the nested layout if it exists, else fall back to the flat one.
+if [[ -f "$LOCAL_DIR/share/zinit/zinit.git/zinit.git/zinit.zsh" ]]; then
+    export ZINIT_HOME="$LOCAL_DIR/share/zinit/zinit.git/zinit.git"
+else
+    export ZINIT_HOME="$LOCAL_DIR/share/zinit/zinit.git"
+fi
 
 # path exports
 export PATH="$PATH:$LOCAL_DIR/bin" # local bin
