@@ -128,10 +128,14 @@ tmux_conf_theme_window_bg="default"
 # highlight focused pane, possible values are:
 #   - true
 #   - false (default)
-tmux_conf_theme_highlight_focused_pane=false
+# we want this on: dims the background of inactive panes so the active
+# pane is unambiguous at a glance.
+tmux_conf_theme_highlight_focused_pane=true
 
 # focused pane colours:
-tmux_conf_theme_focused_pane_bg="$tmux_conf_theme_colour_2"
+# colour_14 (mantle #1e2030) is darker than the terminal's base bg (#24273a),
+# so the active pane is subtly recessed while inactive panes appear brighter.
+tmux_conf_theme_focused_pane_bg="$tmux_conf_theme_colour_14"
 
 # pane border style, possible values are:
 #   - thin (default)
@@ -357,7 +361,9 @@ tmux_conf_theme_clock_style="24"
 #   - false (default)
 #   - disabled
 # on Linux, this requires xsel, xclip or wl-copy
-tmux_conf_copy_to_os_clipboard=false
+# combined with `set -g mouse on` below, dragging with the mouse auto-copies
+# the selection to the system clipboard on release.
+tmux_conf_copy_to_os_clipboard=true
 
 
 # -- user customizations -------------------------------------------------------
