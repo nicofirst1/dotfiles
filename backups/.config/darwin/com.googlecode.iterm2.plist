@@ -4104,6 +4104,10 @@
 	<true/>
 	<key>HotkeyMigratedFromSingleToMulti</key>
 	<true/>
+	<key>NeverWarnAboutShortLivedSessions_D4F4940C-19BF-4561-817B-17B68C9FBB71</key>
+	<true/>
+	<key>NeverWarnAboutShortLivedSessions_D4F4940C-19BF-4561-817B-17B68C9FBB71_selection</key>
+	<integer>0</integer>
 	<key>New Bookmarks</key>
 	<array>
 		<dict>
@@ -4375,7 +4379,7 @@
 			<key>Columns</key>
 			<integer>80</integer>
 			<key>Command</key>
-			<string>tmux</string>
+			<string>/bin/zsh -lc tmux</string>
 			<key>Cursor Color</key>
 			<dict>
 				<key>Alpha Component</key>
@@ -4650,6 +4654,8 @@
 				<key>Red Component</key>
 				<real>0.56862745098039214</real>
 			</dict>
+			<key>Load Shell Integration Automatically</key>
+			<false/>
 			<key>Minimum Contrast</key>
 			<real>0.0</real>
 			<key>Mouse Reporting</key>
@@ -4778,7 +4784,7 @@
 	<key>PromptOnQuit</key>
 	<false/>
 	<key>ShowFullScreenTabBar</key>
-	<false/>
+	<true/>
 	<key>SoundForEsc</key>
 	<false/>
 	<key>TabStyleWithAutomaticOption</key>
