@@ -42,10 +42,21 @@ autoload -Uz compinit
 if [ -z "$ZSH_COMPDUMP" ]; then
   ZSH_COMPDUMP="${ZDOTDIR:-$HOME}/.zcompdump-${SHORT_HOST}-${ZSH_VERSION}"
 fi
+# Run the full compaudit security check at most once a day. On warm cache
+# (file exists AND was rebuilt within the last 24h) skip the audit with -C —
+# saves ~25ms per shell start. Wrapped in an anonymous function so
+# extended_glob (required for the `(#qN.mh-24)` qualifier) stays local.
+() {
+  setopt local_options extended_glob
+  if [[ -f $ZSH_COMPDUMP && -n $ZSH_COMPDUMP(#qN.mh-24) ]]; then
+    compinit -C -d $ZSH_COMPDUMP
+  else
+    compinit -d $ZSH_COMPDUMP
+  fi
+}
 if [[ -f $ZSH_COMPDUMP.zwc && $ZSH_COMPDUMP -nt $ZSH_COMPDUMP.zwc ]]; then
   zcompile $ZSH_COMPDUMP
 fi
-compinit -d $ZSH_COMPDUMP
 
 # Make autosuggestion remember history
 # from here https://github.com/zsh-users/zsh-autosuggestions/issues/645#issuecomment-1452340220
@@ -57,8 +68,10 @@ HISTSIZE=999
 setopt HIST_EXPIRE_DUPS_FIRST
 setopt EXTENDED_HISTORY
 
-# Load plugins with zinit using Turbo Mode and lazy loading
-zinit ice lucid
+# Load plugins with zinit using Turbo Mode and lazy loading.
+# wait'0' defers until after the first prompt renders — instant-prompt hides
+# the gap, so the shell feels interactive immediately.
+zinit ice wait'0' lucid
 zinit light zsh-users/zsh-autosuggestions
 
 zinit ice wait'1' lucid
@@ -97,6 +110,7 @@ zinit light-mode for \
 # Agnoster & Powerlevel10k stuff
 DEFAULT_USER=$(whoami)
 
+OPENCODE_CONFIG_DIR="$CONFIG_DIR/opencode"
 
 # Aliases
 source $ALIASES_F
