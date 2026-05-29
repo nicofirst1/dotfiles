@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.nbrandizzi.agentmemory</string>
+
+    <!-- Run the agentmemory worker (loads ~/.agentmemory/.env, spawns the iii
+         engine on :3111, viewer on :3113). node is invoked explicitly because
+         the cli.mjs shebang is `/usr/bin/env node` and launchd has a bare PATH. -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>/opt/homebrew/bin/node</string>
+        <string>/opt/homebrew/lib/node_modules/@agentmemory/agentmemory/dist/cli.mjs</string>
+        <string>start</string>
+    </array>
+
+    <!-- THE fix: pin the engine's cwd so its relative `./data/state_store.db`
+         always resolves to ~/.agentmemory/data, never into whatever repo the
+         MCP shim happened to launch from. -->
+    <key>WorkingDirectory</key>
+    <string>/Users/nbrandizzi/.agentmemory</string>
+
+    <!-- Start at login and keep it alive (it's the long-running memory service). -->
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>/Users/nbrandizzi/Library/Logs/agentmemory/agentmemory.stdout.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/nbrandizzi/Library/Logs/agentmemory/agentmemory.stderr.log</string>
+
+    <!-- launchd's PATH is minimal; needs /opt/homebrew/bin (node) and
+         ~/.local/bin (the iii engine binary the worker spawns). -->
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/Users/nbrandizzi/.local/bin:/usr/local/bin:/usr/bin:/bin</string>
+        <key>HOME</key>
+        <string>/Users/nbrandizzi</string>
+    </dict>
+</dict>
+</plist>
