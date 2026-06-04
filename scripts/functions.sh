@@ -68,8 +68,13 @@ install_gnustow() {
 # stow_restore():
 # This function restores backups created with GNU Stow.
 # It uses GNU Stow to restow the backups to the target directory.
+# - backups:      the main dotfile tree -> $HOME
+# - launchagents: launchagents/Library/LaunchAgents/*.plist -> ~/Library/LaunchAgents
+#                 (the agentmemory daemon + its battery power-guard). Folded into
+#                 the existing real LaunchAgents dir, so unrelated agents there
+#                 are left untouched.
 stow_restore() {
-    stow --dir=$DOTFILES_DIR --target=$HOME --restow backups
+    stow --dir=$DOTFILES_DIR --target=$HOME --restow backups launchagents
 }
 
 #########################

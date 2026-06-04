@@ -104,6 +104,19 @@ fi
 install_gnustow
 stow_restore
 
+# macOS: load (or reload) the stowed LaunchAgents now, so they run without
+# waiting for the next login. Idempotent — bootout any stale instance first,
+# then bootstrap from the symlink stow just created in ~/Library/LaunchAgents.
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    for _plist in "$DOTFILES_DIR"/launchagents/Library/LaunchAgents/*.plist; do
+        [ -e "$_plist" ] || continue
+        _label="$(basename "$_plist" .plist)"
+        launchctl bootout "gui/$(id -u)/$_label" 2>/dev/null || true
+        launchctl bootstrap "gui/$(id -u)" "$HOME/Library/LaunchAgents/$(basename "$_plist")" 2>/dev/null || true
+    done
+    unset _plist _label
+fi
+
 # install rust if not installed
 install_rust
 install_rust_plugins
