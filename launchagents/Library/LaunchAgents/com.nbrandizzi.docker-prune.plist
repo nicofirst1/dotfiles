@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.nbrandizzi.docker-prune</string>
+
+    <!-- Reclaim Docker space (containers, dangling images, build cache).
+         Volumes are intentionally left alone. -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>/Users/nbrandizzi/dotfiles/scripts/docker-prune.sh</string>
+    </array>
+
+    <!-- Every 3 days (259200s). If the Mac is asleep at fire time, launchd runs
+         it on the next wake. Note: the timer restarts whenever the agent is
+         (re)loaded, so frequent reboots push the next run out by up to 3 days. -->
+    <key>StartInterval</key>
+    <integer>259200</integer>
+
+    <!-- Don't prune on every login/reload — only on the interval. -->
+    <key>RunAtLoad</key>
+    <false/>
+
+    <key>StandardOutPath</key>
+    <string>/Users/nbrandizzi/Library/Logs/docker-prune/docker-prune.stdout.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/nbrandizzi/Library/Logs/docker-prune/docker-prune.stderr.log</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <key>HOME</key>
+        <string>/Users/nbrandizzi</string>
+    </dict>
+</dict>
+</plist>
