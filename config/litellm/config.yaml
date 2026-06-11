@@ -1,0 +1,64 @@
+# =============================================================================
+# LiteLLM router for agentmemory  —  FhGenie (primary) + local Ollama (fallback)
+# =============================================================================
+# Provisioned by scripts/install-litellm-router.sh. Run by the LaunchAgent via
+# scripts/litellm-router-run.sh, which exports FHGENIE_API_KEY / FHGENIE_BASE_URL
+# out of ~/.employer-api-key (NO secrets live in this file or in the repo).
+#
+# Why a router instead of pointing agentmemory straight at FhGenie:
+#   - agentmemory's native FALLBACK_PROVIDERS is broken (#778): it sends the
+#     PRIMARY model name to the fallback provider -> 404. The router maps each
+#     alias to its own provider+model, so fallback works correctly.
+#   - One stable local endpoint (127.0.0.1:4141) for agentmemory; swapping or
+#     adding providers is a config edit here, no agentmemory change.
+#
+# Adding Claude/GPT later: when FhGenie grants your key cloud mode (or you wire a
+# personal key), append a model_list entry and, if desired, extend `fallbacks`.
+
+model_list:
+  # ---- what agentmemory actually points at (OPENAI_MODEL=memory-default) ----
+  - model_name: memory-default
+    litellm_params:
+      model: openai/MiniMaxAI/MiniMax-M2.5         # FhGenie on-prem, best quality
+      api_base: os.environ/FHGENIE_BASE_URL
+      api_key: os.environ/FHGENIE_API_KEY
+      max_tokens: 4096                             # MiniMax is a reasoning model;
+                                                   # headroom so graph-extraction
+                                                   # JSON never truncates.
+  - model_name: memory-fallback
+    litellm_params:
+      model: openai/mistral:7b-instruct            # local Ollama, used only when
+      api_base: http://localhost:11434/v1          # FhGenie is unreachable
+      api_key: ollama                              # (off-VPN / on-prem down).
+
+  # ---- direct aliases (manual use / debugging; not in the auto chain) -------
+  - model_name: fhgenie-minimax
+    litellm_params:
+      model: openai/MiniMaxAI/MiniMax-M2.5
+      api_base: os.environ/FHGENIE_BASE_URL
+      api_key: os.environ/FHGENIE_API_KEY
+      max_tokens: 4096
+  - model_name: fhgenie-qwen-coder
+    litellm_params:
+      model: openai/Qwen/Qwen3-Coder-Next-FP8
+      api_base: os.environ/FHGENIE_BASE_URL
+      api_key: os.environ/FHGENIE_API_KEY
+  - model_name: fhgenie-teuken
+    litellm_params:
+      model: openai/openGPT-X/Teuken-7B-instruct-v0.6
+      api_base: os.environ/FHGENIE_BASE_URL
+      api_key: os.environ/FHGENIE_API_KEY
+  - model_name: ollama-mistral
+    litellm_params:
+      model: openai/mistral:7b-instruct
+      api_base: http://localhost:11434/v1
+      api_key: ollama
+
+litellm_settings:
+  # 120s ceiling covers the SLOW fallback path: local mistral on a single GPU
+  # runs 40-76s. The FhGenie primary returns in ~3-7s, so this never bites it.
+  request_timeout: 120
+  num_retries: 1
+  # FhGenie primary -> Ollama fallback. Each alias carries its own model name,
+  # which is exactly what sidesteps agentmemory bug #778.
+  fallbacks: [{"memory-default": ["memory-fallback"]}]

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.nbrandizzi.litellm-router</string>
+
+    <!-- LiteLLM proxy on 127.0.0.1:4141. agentmemory points OPENAI_BASE_URL at
+         it; the proxy routes memory-default -> FhGenie MiniMax (primary) and
+         falls back to local Ollama mistral when FhGenie is unreachable. The
+         wrapper sources ~/.employer-api-key so no secret lives in this plist. -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>/Users/nbrandizzi/dotfiles/scripts/litellm-router-run.sh</string>
+    </array>
+
+    <!-- Long-running local service, like the agentmemory daemon: start at login
+         and keep it alive. -->
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>/Users/nbrandizzi/Library/Logs/litellm/litellm-router.stdout.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/nbrandizzi/Library/Logs/litellm/litellm-router.stderr.log</string>
+
+    <!-- launchd's PATH is minimal; needs ~/.local/bin (pipx litellm) and
+         /opt/homebrew/bin. HOME is required by the wrapper's ~ expansion. -->
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/Users/nbrandizzi/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+        <key>HOME</key>
+        <string>/Users/nbrandizzi</string>
+    </dict>
+</dict>
+</plist>

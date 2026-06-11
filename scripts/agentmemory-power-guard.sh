@@ -2,31 +2,46 @@
 #
 # agentmemory-power-guard.sh
 #
-# Pauses agentmemory's GPU-heavy background loops while on battery, resumes
-# them on AC. The loops (consolidation, reflection, graph extraction) call a
-# local Ollama model (mistral:7b-instruct) which otherwise keeps the GPU warm
-# permanently — fine on AC, unacceptable on battery.
+# Pauses agentmemory's GPU-heavy background loops ONLY when they would actually
+# hit the local GPU — i.e. on battery AND the cloud LLM (FhGenie, via the
+# LiteLLM router) is unreachable, so the router has fallen back to local Ollama.
 #
-# How it works (no engine restart needed):
+# Why the FhGenie check: agentmemory's LLM now points at the LiteLLM router
+# (OPENAI_BASE_URL=127.0.0.1:4141). Normally that routes to FhGenie MiniMax —
+# remote, no local GPU, zero battery cost — so the loops are fine on battery.
+# The local Ollama model (mistral:7b-instruct) is only used when FhGenie is
+# unreachable (off-VPN / on-prem down). That is the one case where running the
+# loops on battery would peg the M2 GPU. So:
+#       throttle  <=>  on battery  AND  FhGenie unreachable
+#
+# How the throttle works (no engine restart needed):
 #   agentmemory reads ~/.agentmemory/.env fresh on every flag check
 #   (loadEnvFile() in dist/index.mjs — no caching, last-definition-wins), and
 #   the cron functions re-check their gate at invocation time
-#   (e.g. isConsolidationEnabled() inside mem::consolidate-pipeline). So
-#   appending an override block at the END of .env flips the loops live:
-#     - on battery -> block present, flags=false -> cron fires but bails early,
-#       zero LLM calls -> Ollama unloads the model -> GPU idles.
-#     - on AC      -> block removed -> the user's own `=true` lines win again.
+#   (e.g. isConsolidationEnabled()). Appending an override block at the END of
+#   .env flips the loops live; removing it restores the user's `=true` lines.
 #
 # Triggered by com.nbrandizzi.agentmemory-power-guard (StartInterval poll).
-# Idempotent: only writes .env on an actual battery<->AC transition.
+# Idempotent: only writes .env on an actual throttle<->unthrottle transition.
 
 set -euo pipefail
 
-# ENV_FILE / OLLAMA_BIN / FORCE_POWER are overridable from the environment to
-# allow isolated testing; they default to the real paths in normal operation.
+# Overridable from the environment for isolated testing; defaults are the real
+# paths/values in normal operation.
 ENV_FILE="${ENV_FILE:-${HOME}/.agentmemory/.env}"
 LOG_FILE="${LOG_FILE:-${HOME}/Library/Logs/agentmemory/power-guard.log}"
 OLLAMA_BIN="${OLLAMA_BIN:-/usr/local/bin/ollama}"
+KEY_FILE="${FHGENIE_KEY_FILE:-${HOME}/.employer-api-key}"
+# The real Ollama model the router falls back to (config/litellm memory-fallback).
+# NOT OPENAI_MODEL from .env — that is now the router alias "memory-default".
+AM_OLLAMA_MODEL="${AM_OLLAMA_MODEL:-mistral:7b-instruct}"
+
+# FhGenie base URL: read from the key file if present, else default. We probe it
+# unauthenticated (a 404 from /v1 still proves reachability), so no secret is
+# needed here.
+_fh_base=""
+[ -f "$KEY_FILE" ] && _fh_base="$(grep -E '^BASE_URL=' "$KEY_FILE" 2>/dev/null | head -1 | cut -d= -f2- | tr -d '[:space:]')"
+FHGENIE_BASE_URL="${FHGENIE_BASE_URL:-${_fh_base:-https://fhgenie.fraunhofer.de/v1}}"
 
 MARK_START="# >>> agentmemory-power-guard (managed) >>>"
 MARK_END="# <<< agentmemory-power-guard (managed) <<<"
@@ -52,6 +67,24 @@ on_battery() {
   return 1
 }
 
+# --- cloud primary reachability ------------------------------------------
+# True if FhGenie answers at all (any HTTP status, incl. 401/404) within the
+# timeout. A connection failure/timeout yields code 000 -> unreachable. No auth
+# header sent, so this never touches the API key.
+fhgenie_reachable() {
+  # Test hook: FORCE_FHGENIE=up|down bypasses the probe.
+  case "${FORCE_FHGENIE:-}" in
+    up)   return 0 ;;
+    down) return 1 ;;
+  esac
+  local code
+  # curl already prints "000" on connection failure/timeout; do NOT add `|| echo
+  # 000` — that double-appends to "000000" and reads as reachable. Empty (curl
+  # absent) also counts as unreachable.
+  code="$(curl -s -o /dev/null -m 3 -w '%{http_code}' "$FHGENIE_BASE_URL" 2>/dev/null)"
+  [ -n "$code" ] && [ "$code" != "000" ]
+}
+
 block_present() {
   [ -f "$ENV_FILE" ] && grep -qF "$MARK_START" "$ENV_FILE"
 }
@@ -60,14 +93,15 @@ add_block() {
   block_present && return 0
   {
     printf '\n%s\n' "$MARK_START"
-    printf '# Auto-added while on battery to stop the local Ollama model pegging the GPU.\n'
-    printf '# Removed automatically on AC. Last-definition-wins overrides the values above.\n'
+    printf '# Auto-added on battery while FhGenie is unreachable (router on local\n'
+    printf '# Ollama fallback) to stop mistral pegging the GPU. Removed when back\n'
+    printf '# on AC or when FhGenie returns. Last-definition-wins over the values above.\n'
     printf 'CONSOLIDATION_ENABLED=false\n'
     printf 'AGENTMEMORY_REFLECT=false\n'
     printf 'GRAPH_EXTRACTION_ENABLED=false\n'
     printf '%s\n' "$MARK_END"
   } >> "$ENV_FILE"
-  log "battery: appended override block (loops disabled)"
+  log "throttle ON (battery + FhGenie unreachable): appended override block"
 }
 
 remove_block() {
@@ -88,20 +122,22 @@ remove_block() {
     }
   ' "$ENV_FILE" > "$tmp"
   mv "$tmp" "$ENV_FILE"
-  log "AC: removed override block (loops re-enabled)"
+  log "throttle OFF: removed override block (loops re-enabled)"
 }
 
 unload_model() {
   [ -x "$OLLAMA_BIN" ] || return 0
-  local model
-  model="$(grep -E '^OPENAI_MODEL=' "$ENV_FILE" 2>/dev/null | head -1 | cut -d= -f2- | tr -d '[:space:]')"
-  [ -z "$model" ] && model="mistral:7b-instruct"
-  # Drop the model from the GPU immediately; cron stays gated so it won't reload.
-  "$OLLAMA_BIN" stop "$model" >/dev/null 2>&1 && log "unloaded ollama model: $model" || true
+  # Drop the local fallback model from the GPU immediately; cron stays gated so
+  # it won't reload while throttled.
+  "$OLLAMA_BIN" stop "$AM_OLLAMA_MODEL" >/dev/null 2>&1 \
+    && log "unloaded ollama model: $AM_OLLAMA_MODEL" || true
 }
 
 main() {
-  if on_battery; then
+  # Throttle only when the loops would actually burn the local GPU: on battery
+  # AND FhGenie down (router fell back to Ollama). Every other combination
+  # (AC, or FhGenie reachable) runs the loops — inference is remote or cheap.
+  if on_battery && ! fhgenie_reachable; then
     if ! block_present; then
       add_block
       unload_model
