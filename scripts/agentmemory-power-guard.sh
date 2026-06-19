@@ -32,6 +32,18 @@ ENV_FILE="${ENV_FILE:-${HOME}/.agentmemory/.env}"
 LOG_FILE="${LOG_FILE:-${HOME}/Library/Logs/agentmemory/power-guard.log}"
 OLLAMA_BIN="${OLLAMA_BIN:-/usr/local/bin/ollama}"
 KEY_FILE="${FHGENIE_KEY_FILE:-${HOME}/.employer-api-key}"
+
+# Hysteresis: how many consecutive polls must agree on the NEW state before we
+# actually flip .env. At the 30s poll interval, 3 => a 90s confirmation window.
+# A lone flaky FhGenie probe (or a momentary AC blip) no longer churns .env or
+# unloads the model. Tunable for testing.
+STREAK_THRESHOLD="${STREAK_THRESHOLD:-3}"
+# Persists the pending-transition streak across launchd invocations (the script
+# runs fresh every poll, so in-memory counters don't survive).
+STATE_FILE="${STATE_FILE:-${HOME}/.agentmemory/.power-guard-state}"
+# How many times to probe FhGenie within a single run before declaring it down.
+# Absorbs a single transient timeout without waiting for the next 30s poll.
+FHGENIE_PROBES="${FHGENIE_PROBES:-2}"
 # The real Ollama model the router falls back to (config/litellm memory-fallback).
 # NOT OPENAI_MODEL from .env — that is now the router alias "memory-default".
 AM_OLLAMA_MODEL="${AM_OLLAMA_MODEL:-mistral:7b-instruct}"
@@ -77,12 +89,17 @@ fhgenie_reachable() {
     up)   return 0 ;;
     down) return 1 ;;
   esac
-  local code
-  # curl already prints "000" on connection failure/timeout; do NOT add `|| echo
-  # 000` — that double-appends to "000000" and reads as reachable. Empty (curl
-  # absent) also counts as unreachable.
-  code="$(curl -s -o /dev/null -m 3 -w '%{http_code}' "$FHGENIE_BASE_URL" 2>/dev/null)"
-  [ -n "$code" ] && [ "$code" != "000" ]
+  local code i
+  # Probe a few times within this single run: one transient timeout shouldn't
+  # flip us to "unreachable". Any successful answer (incl. 401/404) wins early.
+  for ((i = 0; i < FHGENIE_PROBES; i++)); do
+    # curl already prints "000" on connection failure/timeout; do NOT add `|| echo
+    # 000` — that double-appends to "000000" and reads as reachable. Empty (curl
+    # absent) also counts as unreachable.
+    code="$(curl -s -o /dev/null -m 3 -w '%{http_code}' "$FHGENIE_BASE_URL" 2>/dev/null)"
+    [ -n "$code" ] && [ "$code" != "000" ] && return 0
+  done
+  return 1
 }
 
 block_present() {
@@ -133,19 +150,52 @@ unload_model() {
     && log "unloaded ollama model: $AM_OLLAMA_MODEL" || true
 }
 
+# --- hysteresis state ----------------------------------------------------
+# The pending-transition streak lives in one line: "<target> <count>", where
+# target is the state we're trying to move TO (ON|OFF). Absent/empty == no
+# pending transition (we're settled in the current state).
+read_streak_target() { [ -f "$STATE_FILE" ] && awk '{print $1}' "$STATE_FILE" 2>/dev/null || true; }
+read_streak_count()  { [ -f "$STATE_FILE" ] && awk '{print ($2 ~ /^[0-9]+$/) ? $2 : 0}' "$STATE_FILE" 2>/dev/null || true; }
+write_streak()       { printf '%s %s\n' "$1" "$2" > "$STATE_FILE" 2>/dev/null || true; }
+clear_streak()       { rm -f "$STATE_FILE" 2>/dev/null || true; }
+
 main() {
   # Throttle only when the loops would actually burn the local GPU: on battery
   # AND FhGenie down (router fell back to Ollama). Every other combination
   # (AC, or FhGenie reachable) runs the loops — inference is remote or cheap.
-  if on_battery && ! fhgenie_reachable; then
-    if ! block_present; then
+  local want current
+  if on_battery && ! fhgenie_reachable; then want="ON"; else want="OFF"; fi
+  if block_present; then current="ON"; else current="OFF"; fi
+
+  # Already where we want to be: cancel any half-built streak and stop. This is
+  # the common case and writes nothing (idempotent, no churn).
+  if [ "$want" = "$current" ]; then
+    [ -f "$STATE_FILE" ] && clear_streak
+    return 0
+  fi
+
+  # A flip is desired. Require STREAK_THRESHOLD consecutive polls agreeing on the
+  # same target before acting, so a single flaky FhGenie probe / AC blip can't
+  # rewrite .env or unload the model.
+  local target count
+  target="$(read_streak_target)"
+  if [ "$target" = "$want" ]; then
+    count=$(( $(read_streak_count) + 1 ))
+  else
+    count=1
+  fi
+
+  if [ "$count" -ge "$STREAK_THRESHOLD" ]; then
+    clear_streak
+    if [ "$want" = "ON" ]; then
       add_block
       unload_model
-    fi
-  else
-    if block_present; then
+    else
       remove_block
     fi
+  else
+    write_streak "$want" "$count"
+    log "pending throttle $want ($count/$STREAK_THRESHOLD) — holding $current until confirmed"
   fi
 }
 
