@@ -1,0 +1,15 @@
+# --- credentials / secrets (belt-and-suspenders; real secrets live in ~/ ) ---
+# Never commit credential files even if one is ever copied/symlinked into the tree.
+.employer-api-key
+*employer-api-key*
+*.env
+.env
+secrets/
+*secret*
+*credential*
+*.key
+*.pem
+id_rsa*
+
+# --- macOS / editor noise ---
+.DS_Store
