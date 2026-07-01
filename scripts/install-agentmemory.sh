@@ -22,7 +22,9 @@
 
 set -euo pipefail
 
-AM_VERSION="0.9.25"               # pin to the version this config was written for
+AM_VERSION="0.9.27"               # pin to the version this config was written for
+                                  # (0.9.27: graceful graph reads + safe graph/reset;
+                                  #  fixes the >25K graph enumeration crash class)
 AM_MODEL="mistral:7b-instruct"    # the local LLM agentmemory talks to
 OLLAMA_URL="http://localhost:11434"
 
