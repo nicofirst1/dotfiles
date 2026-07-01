@@ -1,56 +1,59 @@
 # =============================================================================
-# LiteLLM router for agentmemory  —  FhGenie (primary) + local Ollama (fallback)
+# LiteLLM router for agentmemory  —  IAIS GenAI (primary) + local Ollama (fallback)
 # =============================================================================
 # Provisioned by scripts/install-litellm-router.sh. Run by the LaunchAgent via
-# scripts/litellm-router-run.sh, which exports FHGENIE_API_KEY / FHGENIE_BASE_URL
-# out of ~/.employer-api-key (NO secrets live in this file or in the repo).
+# scripts/litellm-router-run.sh, which exports IAIS_BASE_URL + IAIS_AUTH_HEADER
+# (Basic auth) out of ~/.employer-api-key (NO secrets live in this file or repo).
 #
-# Why a router instead of pointing agentmemory straight at FhGenie:
-#   - agentmemory's native FALLBACK_PROVIDERS is broken (#778): it sends the
-#     PRIMARY model name to the fallback provider -> 404. The router maps each
-#     alias to its own provider+model, so fallback works correctly.
-#   - One stable local endpoint (127.0.0.1:4141) for agentmemory; swapping or
-#     adding providers is a config edit here, no agentmemory change.
+# Why IAIS GenAI (genai.iais.fraunhofer.de/api/v2) over corporate FhGenie:
+#   - It hosts fast NON-reasoning instruct models. The old MiniMax-M2.5 was a
+#     reasoning model: its hidden reasoning_content exhausted max_tokens and
+#     returned EMPTY content, so graph extraction committed 0 nodes. A plain
+#     instruct model (Mistral-Small) emits the answer directly — no reasoning tax.
+#   - klartext battle-tested this endpoint; treated as always-up with net+creds.
 #
-# Adding Claude/GPT later: when FhGenie grants your key cloud mode (or you wire a
-# personal key), append a model_list entry and, if desired, extend `fallbacks`.
+# Auth: IAIS uses HTTP Basic (base64 user:pass), NOT a Bearer key. LiteLLM sends
+# Bearer by default, so we inject the Basic header via extra_headers. api_key is
+# an unused placeholder (extra_headers.Authorization wins on the wire).
+#
+# Why a router at all: agentmemory's native FALLBACK_PROVIDERS is broken (#778) —
+# it sends the PRIMARY model name to the fallback provider -> 404. The router maps
+# each alias to its own provider+model, so fallback works correctly.
 
 model_list:
-  # ---- what agentmemory actually points at (OPENAI_MODEL=memory-default) ----
+  # ---- what agentmemory points at (OPENAI_MODEL=memory-default) --------------
   - model_name: memory-default
     litellm_params:
-      model: openai/MiniMaxAI/MiniMax-M2.5         # FhGenie on-prem, best quality
-      api_base: os.environ/FHGENIE_BASE_URL
-      api_key: os.environ/FHGENIE_API_KEY
-      max_tokens: 8192                             # MiniMax is a reasoning model: its
-                                                   # reasoning_content alone burns >4096
-                                                   # tokens, so 4096 hits finish=length
-                                                   # and returns EMPTY content -> graph
-                                                   # extraction commits 0 nodes. 8192
-                                                   # leaves room for reasoning + JSON.
+      model: openai/Mistral-Small-3.2-24B-Instruct-2506   # IAIS, non-reasoning, ~10s
+      api_base: os.environ/IAIS_BASE_URL
+      api_key: "unused-basic-auth-in-extra_headers"
+      extra_headers: {"Authorization": "os.environ/IAIS_AUTH_HEADER"}
+      max_tokens: 8192                                     # ample for batch JSON
   - model_name: memory-fallback
     litellm_params:
       model: openai/mistral:7b-instruct            # local Ollama, used only when
-      api_base: http://localhost:11434/v1          # FhGenie is unreachable
-      api_key: ollama                              # (off-VPN / on-prem down).
+      api_base: http://localhost:11434/v1          # IAIS is unreachable
+      api_key: ollama                              # (off-VPN / off-net).
 
-  # ---- direct aliases (manual use / debugging; not in the auto chain) -------
-  - model_name: fhgenie-minimax
+  # ---- direct aliases (manual use / debugging; not in the auto chain) --------
+  - model_name: iais-mistral-small
     litellm_params:
-      model: openai/MiniMaxAI/MiniMax-M2.5
-      api_base: os.environ/FHGENIE_BASE_URL
-      api_key: os.environ/FHGENIE_API_KEY
-      max_tokens: 8192                             # reasoning model — see memory-default
-  - model_name: fhgenie-qwen-coder
+      model: openai/Mistral-Small-3.2-24B-Instruct-2506
+      api_base: os.environ/IAIS_BASE_URL
+      api_key: "unused"
+      extra_headers: {"Authorization": "os.environ/IAIS_AUTH_HEADER"}
+  - model_name: iais-qwen-122b
     litellm_params:
-      model: openai/Qwen/Qwen3-Coder-Next-FP8
-      api_base: os.environ/FHGENIE_BASE_URL
-      api_key: os.environ/FHGENIE_API_KEY
-  - model_name: fhgenie-teuken
+      model: openai/Qwen3.5-122B-A10B
+      api_base: os.environ/IAIS_BASE_URL
+      api_key: "unused"
+      extra_headers: {"Authorization": "os.environ/IAIS_AUTH_HEADER"}
+  - model_name: iais-gpt-oss-120b
     litellm_params:
-      model: openai/openGPT-X/Teuken-7B-instruct-v0.6
-      api_base: os.environ/FHGENIE_BASE_URL
-      api_key: os.environ/FHGENIE_API_KEY
+      model: openai/gpt-oss-120b
+      api_base: os.environ/IAIS_BASE_URL
+      api_key: "unused"
+      extra_headers: {"Authorization": "os.environ/IAIS_AUTH_HEADER"}
   - model_name: ollama-mistral
     litellm_params:
       model: openai/mistral:7b-instruct
@@ -59,9 +62,9 @@ model_list:
 
 litellm_settings:
   # 120s ceiling covers the SLOW fallback path: local mistral on a single GPU
-  # runs 40-76s. The FhGenie primary returns in ~3-7s, so this never bites it.
+  # runs 40-76s. The IAIS primary returns in ~10s, so this never bites it.
   request_timeout: 120
   num_retries: 1
-  # FhGenie primary -> Ollama fallback. Each alias carries its own model name,
+  # IAIS primary -> Ollama fallback. Each alias carries its own model name,
   # which is exactly what sidesteps agentmemory bug #778.
   fallbacks: [{"memory-default": ["memory-fallback"]}]

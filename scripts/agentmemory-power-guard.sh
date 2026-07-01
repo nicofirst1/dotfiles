@@ -48,12 +48,13 @@ FHGENIE_PROBES="${FHGENIE_PROBES:-2}"
 # NOT OPENAI_MODEL from .env — that is now the router alias "memory-default".
 AM_OLLAMA_MODEL="${AM_OLLAMA_MODEL:-mistral:7b-instruct}"
 
-# FhGenie base URL: read from the key file if present, else default. We probe it
-# unauthenticated (a 404 from /v1 still proves reachability), so no secret is
-# needed here.
+# Cloud-primary (IAIS GenAI) base URL: read from the key file if present, else
+# default. We probe it unauthenticated (a 401/404 still proves reachability), so
+# no secret is needed here. Var keeps its historical name; "fhgenie" throughout
+# this script now means "the cloud primary", which is IAIS GenAI.
 _fh_base=""
-[ -f "$KEY_FILE" ] && _fh_base="$(grep -E '^BASE_URL=' "$KEY_FILE" 2>/dev/null | head -1 | cut -d= -f2- | tr -d '[:space:]')"
-FHGENIE_BASE_URL="${FHGENIE_BASE_URL:-${_fh_base:-https://fhgenie.fraunhofer.de/v1}}"
+[ -f "$KEY_FILE" ] && _fh_base="$(grep -E '^IAIS_BASE_URL=' "$KEY_FILE" 2>/dev/null | head -1 | cut -d= -f2- | tr -d '[:space:]')"
+FHGENIE_BASE_URL="${FHGENIE_BASE_URL:-${_fh_base:-https://genai.iais.fraunhofer.de/api/v2}}"
 
 MARK_START="# >>> agentmemory-power-guard (managed) >>>"
 MARK_END="# <<< agentmemory-power-guard (managed) <<<"

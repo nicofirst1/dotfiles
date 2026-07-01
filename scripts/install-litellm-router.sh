@@ -8,11 +8,12 @@
 #
 #     bash ~/dotfiles/scripts/install-litellm-router.sh
 #
-# What it does — point agentmemory's LLM work at Fraunhofer FhGenie (fast, free,
-# employer-paid) with local Ollama as an automatic fallback:
+# What it does — point agentmemory's LLM work at Fraunhofer IAIS GenAI (fast,
+# free, employer-paid, non-reasoning models) with local Ollama as an automatic
+# fallback:
 #   1. litellm[proxy]                 -> pipx (isolated venv; the pyenv shim is
 #                                        dependency-broken, so we never use it)
-#   2. preflight                       -> ~/.employer-api-key, FhGenie reachable,
+#   2. preflight                       -> ~/.employer-api-key, IAIS reachable,
 #                                        Ollama up (fallback path)
 #   3. the LaunchAgent (router :4000)  -> stowed + loaded
 #   4. health + smoke test             -> memory-default answers via the proxy
@@ -46,13 +47,14 @@ agent_loaded() { launchctl list 2>/dev/null | awk -v l="$1" '$3==l{f=1} END{exit
 [[ "$OSTYPE" == darwin* ]] || die "macOS only (uses launchctl)."
 command -v pipx >/dev/null || die "pipx missing — 'brew install pipx' first."
 [[ -f "$KEY_FILE" ]] || die "key file $KEY_FILE not found. Create it with:
-    printf 'BASE_URL=%s\\nAPI_KEY=%s\\n' 'https://fhgenie.fraunhofer.de/v1' 'YOUR_KEY' > $KEY_FILE"
+    printf 'FHG_USERNAME=%s\\nFHG_PASSWORD=%s\\nIAIS_BASE_URL=%s\\n' 'YOUR_USER' 'YOUR_PASS' 'https://genai.iais.fraunhofer.de/api/v2' > $KEY_FILE"
 
-# Pull BASE_URL / API_KEY out of the key file for preflight probes.
+# Pull IAIS creds out of the key file for preflight probes (Basic auth).
 set -a; . "$KEY_FILE"; set +a
-[[ -n "${API_KEY:-}" ]]  || die "API_KEY missing in $KEY_FILE"
-[[ -n "${BASE_URL:-}" ]] || die "BASE_URL missing in $KEY_FILE"
-FHGENIE_BASE_URL="$(printf '%s' "$BASE_URL" | tr -d '[:space:]')"
+[[ -n "${FHG_USERNAME:-}" ]] || die "FHG_USERNAME missing in $KEY_FILE"
+[[ -n "${FHG_PASSWORD:-}" ]] || die "FHG_PASSWORD missing in $KEY_FILE"
+IAIS_BASE_URL="$(printf '%s' "${IAIS_BASE_URL:-https://genai.iais.fraunhofer.de/api/v2}" | tr -d '[:space:]')"
+IAIS_AUTH="Basic $(printf '%s:%s' "$FHG_USERNAME" "$FHG_PASSWORD" | base64 | tr -d '\n')"
 
 # --- 1. litellm[proxy] via pipx (isolated) ----------------------------------
 if "$LITELLM_BIN" --version >/dev/null 2>&1; then
@@ -72,13 +74,13 @@ else
     "$LITELLM_BIN" --version >/dev/null 2>&1 || die "litellm still not runnable at $LITELLM_BIN"
 fi
 
-# --- 2. preflight: FhGenie reachable? Ollama up? ----------------------------
-say "Probing FhGenie ($FHGENIE_BASE_URL)..."
-if curl -fsS -m 20 "$FHGENIE_BASE_URL/models" -H "Authorization: Bearer $API_KEY" >/dev/null 2>&1; then
-    echo "  • FhGenie: reachable"
+# --- 2. preflight: IAIS reachable? Ollama up? -------------------------------
+say "Probing IAIS GenAI ($IAIS_BASE_URL)..."
+if curl -fsS -m 20 "$IAIS_BASE_URL/models" -H "Authorization: $IAIS_AUTH" >/dev/null 2>&1; then
+    echo "  • IAIS GenAI: reachable"
 else
-    warn "FhGenie not reachable (VPN down?). Router still installs; it will serve"
-    warn "  from the Ollama fallback until FhGenie comes back."
+    warn "IAIS not reachable (VPN down?). Router still installs; it will serve"
+    warn "  from the Ollama fallback until IAIS comes back."
 fi
 if curl -fsS -m 4 "http://localhost:11434/api/version" >/dev/null 2>&1; then
     echo "  • Ollama (fallback): up"
@@ -140,16 +142,17 @@ if [[ -f "$ENV_FILE" ]]; then
     python3 - "$ENV_FILE" <<'PY'
 import sys, re
 path = sys.argv[1]
-# Only the LLM endpoint changes; embeddings stay local (no reindex).
-# MAX_TOKENS=4096 gives MiniMax's reasoning room so graph-extraction JSON
-# never truncates. Active (uncommented) lines are rewritten in place; any
-# missing key is appended under a managed marker. Commented lines (e.g. a
-# parked cloud key) are left untouched.
+# Only the LLM endpoint changes; embeddings stay local (no reindex). The router
+# primary is now a NON-reasoning model (IAIS Mistral-Small), so there is no
+# hidden-reasoning token drain; 8192 is ample headroom for batch graph-extraction
+# JSON. Active (uncommented) lines are rewritten in place; any missing key is
+# appended under a managed marker. Commented lines (e.g. a parked cloud key) are
+# left untouched.
 updates = {
     "OPENAI_API_KEY":  "litellm-local",        # dummy; the loopback proxy needs no auth
     "OPENAI_MODEL":    "memory-default",        # the router alias
     "OPENAI_BASE_URL": "http://127.0.0.1:4141", # agentmemory appends /v1/chat/completions
-    "MAX_TOKENS":      "4096",
+    "MAX_TOKENS":      "8192",
 }
 lines = open(path).read().splitlines()
 seen, out = set(), []
@@ -185,6 +188,6 @@ agent_loaded "$ROUTER_LABEL"            && echo "  • Router agent: loaded"  ||
 curl -fsS -m 2 "$ROUTER_URL/health/liveliness" >/dev/null 2>&1 \
                                         && echo "  • Router $ROUTER_URL: healthy" || echo "  • Router $ROUTER_URL: DOWN"
 echo
-echo "agentmemory now: LLM -> FhGenie MiniMax-M2.5 (fallback: Ollama mistral), embeddings -> local."
+echo "agentmemory now: LLM -> IAIS Mistral-Small (fallback: Ollama mistral), embeddings -> local."
 echo "Logs: $LOG_DIR/litellm-router.stderr.log"
 echo "Manual switch of primary model: edit config/litellm/config.yaml (memory-default), re-run this script."

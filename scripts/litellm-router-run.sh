@@ -2,9 +2,13 @@
 #
 # litellm-router-run.sh  —  launcher for the LiteLLM router LaunchAgent
 #
-# Sources the FhGenie credentials out of ~/.employer-api-key (kept OUT of the
-# repo and out of the plist), exports them under the names the config expects,
+# Sources the IAIS GenAI credentials out of ~/.employer-api-key (kept OUT of the
+# repo and out of the plist), builds the Basic-auth header the config expects,
 # then execs the pipx-isolated litellm proxy against config/litellm/config.yaml.
+#
+# IAIS GenAI (genai.iais.fraunhofer.de/api/v2) uses HTTP Basic auth
+# (base64 user:pass), not a Bearer key. LiteLLM sends Bearer by default, so we
+# pass the Basic header via the config's extra_headers -> os.environ/IAIS_AUTH_HEADER.
 #
 # The pipx-isolated binary is used by absolute path on purpose: a broken
 # `litellm` shim may sit earlier on PATH (e.g. a pyenv global with mismatched
@@ -32,10 +36,13 @@ CONFIG="${LITELLM_CONFIG:-$SELF/../config/litellm/config.yaml}"
 [[ -x "$LITELLM_BIN" ]] || { echo "litellm-router: litellm not found/executable: $LITELLM_BIN" >&2; exit 1; }
 [[ -f "$CONFIG" ]] || { echo "litellm-router: config not found: $CONFIG" >&2; exit 1; }
 
-# Load BASE_URL= / API_KEY= from the key file and re-export them namespaced so
-# the config's `os.environ/FHGENIE_*` references resolve.
+# Load the key file and build the Basic-auth header the config resolves via
+# os.environ/IAIS_AUTH_HEADER / os.environ/IAIS_BASE_URL.
 set -a; . "$KEY_FILE"; set +a
-export FHGENIE_API_KEY="${API_KEY:?API_KEY missing in $KEY_FILE}"
-export FHGENIE_BASE_URL="$(printf '%s' "${BASE_URL:?BASE_URL missing in $KEY_FILE}" | tr -d '[:space:]')"
+: "${FHG_USERNAME:?FHG_USERNAME missing in $KEY_FILE}"
+: "${FHG_PASSWORD:?FHG_PASSWORD missing in $KEY_FILE}"
+export IAIS_BASE_URL="$(printf '%s' "${IAIS_BASE_URL:-https://genai.iais.fraunhofer.de/api/v2}" | tr -d '[:space:]')"
+# `base64` on macOS emits no line wraps for short input; strip any stray newline anyway.
+export IAIS_AUTH_HEADER="Basic $(printf '%s:%s' "$FHG_USERNAME" "$FHG_PASSWORD" | base64 | tr -d '\n')"
 
 exec "$LITELLM_BIN" --config "$CONFIG" --host "$HOST" --port "$PORT"
