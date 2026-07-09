@@ -11,5 +11,9 @@ secrets/
 *.pem
 id_rsa*
 
+# --- agentmemory runtime state — never commit (public repo); belongs in its
+#     own data dir, not here. Landed in the repo root from a stray cwd. ---
+data/
+
 # --- macOS / editor noise ---
 .DS_Store

@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# Entry point for the Close Empty Spaces.app bundle.
+# Resolves the canonical script in ~/dotfiles, runs it with --apply,
+# and shows a macOS notification with the result.
+
+set -u
+
+SCRIPT="$HOME/dotfiles/scripts/close-empty-spaces.sh"
+
+notify() {
+    local title="$1" body="$2"
+    osascript -e "display notification \"${body//\"/\\\"}\" with title \"${title//\"/\\\"}\""
+}
+
+if [[ ! -x "$SCRIPT" ]]; then
+    notify "Close Empty Spaces" "Script not found at $SCRIPT"
+    exit 1
+fi
+
+output=$("$SCRIPT" --apply 2>&1) || {
+    notify "Close Empty Spaces — error" "$(echo "$output" | tail -3 | tr '\n' ' ')"
+    exit 1
+}
+
+summary=$(echo "$output" | grep -Eo 'removed=[0-9]+ kept=[0-9]+' | tail -1)
+if [[ -z "$summary" ]]; then
+    summary="done"
+fi
+notify "Close Empty Spaces" "$summary"
