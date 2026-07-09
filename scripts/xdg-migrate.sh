@@ -9,8 +9,11 @@
 # destination already exists. Nothing is hard-deleted (except an empty
 # ~/.bundle) — stale copies go to the Trash (~/.Trash, 30-day recovery).
 #
-# Deliberately NOT migrated: pyenv (~/.pyenv, multi-GB — moving it means
-# reinstalling every version), gsutil, wget hsts.
+# pyenv can't be moved (compiled interpreters hardcode absolute paths), so it's
+# reinstalled at the XDG root by scripts/install-pyenv.sh, then the old ~/.pyenv
+# is trashed below once the new root exists.
+#
+# Deliberately NOT migrated: gsutil, wget hsts.
 
 : "${XDG_CONFIG_HOME:=$HOME/.config}"
 : "${XDG_CACHE_HOME:=$HOME/.cache}"
@@ -57,6 +60,18 @@ move "$HOME/.local/pipx" "$XDG_DATA_HOME/pipx"          # then run: pipx reinsta
 trash "$HOME/.p10k.zsh"                              # -> $XDG_CONFIG_HOME/zsh/.p10k.zsh (sourced in .zshrc)
 for f in "$HOME"/.zcompdump*; do trash "$f"; done   # -> $XDG_CACHE_HOME/zsh/zcompdump-* (regenerated)
 trash "$HOME/.zhistory"                             # -> $XDG_STATE_HOME/zsh/history (may reappear until old shells close)
+
+# pyenv: only safe to drop the old ~/.pyenv once install-pyenv.sh has seeded the
+# new XDG root — guard on it so re-running this before the reinstall never nukes
+# the only copy of your interpreters. Old globals (incl. editable installs tied
+# to local repos) are intentionally not carried over; recreate per-project.
+_pyenv_new="${PYENV_ROOT:-$XDG_DATA_HOME/pyenv}"
+if [ "$_pyenv_new" != "$HOME/.pyenv" ] && [ -n "$(ls -A "$_pyenv_new/versions" 2>/dev/null)" ]; then
+    trash "$HOME/.pyenv"
+elif [ -d "$HOME/.pyenv" ]; then
+    echo "skip (new root empty):  ~/.pyenv  — run scripts/install-pyenv.sh first"
+fi
+unset _pyenv_new
 
 # .bundle is empty on this machine — bundler recreates it at the XDG paths.
 if [ -d "$HOME/.bundle" ] && [ -z "$(ls -A "$HOME/.bundle" 2>/dev/null)" ]; then

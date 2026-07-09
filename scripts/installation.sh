@@ -124,6 +124,11 @@ install_rust_plugins
 # install fzf (skipped if apt already provided it on Linux)
 install_fzf
 
+# Seed pyenv Python versions at the XDG root (compiles from source — slow the
+# first time, instant on re-runs via --skip-existing). Best-effort: a compile
+# failure must not abort the rest of the bootstrap.
+bash "$SCRIPTS_DIR/install-pyenv.sh" || echo "warn: install-pyenv.sh failed; continuing"
+
 # install MesloLGS NF so Powerlevel10k's prompt glyphs render
 install_nerd_font
 

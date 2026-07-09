@@ -1,7 +1,9 @@
 
-# check if $HOME/.pyenv exists
-if [ -d $HOME/.pyenv ]; then
-    export PATH="$HOME/.pyenv/bin:$PATH"
+# PYENV_ROOT is set in exports.sh (XDG data dir); fall back to the conventional
+# path if this file is ever sourced standalone.
+: "${PYENV_ROOT:=${XDG_DATA_HOME:-$HOME/.local/share}/pyenv}"
+if [ -d "$PYENV_ROOT" ]; then
+    export PATH="$PYENV_ROOT/bin:$PATH"
     # `pyenv init -` forks bash + sources completions + runs `pyenv rehash`
     # on every shell start (~500ms). Cache the generated script and skip
     # rehash (only needed after installing a new version/package script —

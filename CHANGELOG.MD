@@ -8,8 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `scripts/install-pyenv.sh`: idempotent seeder that (re)installs the pinned Python set (3.10.14, 3.11.9, 3.12.9, 3.13.9) at `$PYENV_ROOT` and sets the `3.13.9 3.12.9` global. Installs pyenv itself if missing (brew on macOS, git-clone on Linux). Called best-effort from `installation.sh`, also runnable standalone.
+- `exports.sh`: `PYENV_ROOT="$XDG_DATA_HOME/pyenv"` — relocates pyenv off `$HOME/.pyenv` into XDG.
 ### Fixed
 ### Changed
+- pyenv now lives under XDG (`~/.local/share/pyenv`). Because compiled interpreters hardcode absolute dylib install-names + shebangs + sysconfig paths, this is a reinstall-at-new-root (via `install-pyenv.sh`), not a `mv`. `xdg-migrate.sh` trashes the old `~/.pyenv` once the new root is seeded; `python/settings.sh` now gates on `$PYENV_ROOT`.
 ### Removed
 
 
