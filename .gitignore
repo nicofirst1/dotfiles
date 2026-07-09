@@ -15,5 +15,10 @@ id_rsa*
 #     own data dir, not here. Landed in the repo root from a stray cwd. ---
 data/
 
+# --- machine-specific zsh login bootstrap (brew/MacPorts/OrbStack PATH) ---
+# Relocated out of $HOME/.zprofile into $ZDOTDIR when ZDOTDIR was adopted. Holds
+# per-machine paths (Apple Silicon brew prefix, etc.), so keep it untracked.
+backups/.config/zsh/.zprofile
+
 # --- macOS / editor noise ---
 .DS_Store

@@ -19,7 +19,7 @@ export CONFIG_DIR="$HOME/.config"       # Directory for storing configuration fi
 export LOCAL_DIR="$HOME/.local"       # Directory for storing local files
 
 # Set up files
-export ZSHRC_F="$HOME/.zshrc"       # Path to Zsh configuration file
+export ZSHRC_F="${ZDOTDIR:-$HOME}/.zshrc"       # Path to Zsh configuration file (under $ZDOTDIR)
 export UTILS_F="$SCRIPTS_DIR/functions.sh"       # Path to utility functions file
 export EXPORTS_F="$SCRIPTS_DIR/exports.sh"     # Path to exports file
 export ALIASES_F="$CONFIG_DIR/.aliases"       # Path to Zsh aliases file
