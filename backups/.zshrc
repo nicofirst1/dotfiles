@@ -130,8 +130,18 @@ fi
 
 # thefuck — gated on both presence AND a working invocation, since Python 3.14
 # dropped `distutils` and breaks unmaintained thefuck installs at import time.
-if command -v thefuck &> /dev/null && thefuck --alias &> /dev/null; then
-    eval "$(thefuck --alias)"
+# `thefuck --alias` boots a full Python interpreter (~280ms) on every shell
+# start just to print a static function body — cache it like pyenv above.
+if command -v thefuck &> /dev/null; then
+    _thefuck_cache="${XDG_CACHE_HOME:-$HOME/.cache}/thefuck-alias.zsh"
+    () {
+        setopt local_options extended_glob
+        if [[ ! -s $_thefuck_cache || -z $_thefuck_cache(#qN.mh-24) ]]; then
+            thefuck --alias > $_thefuck_cache 2>/dev/null || rm -f $_thefuck_cache
+        fi
+    }
+    [[ -s $_thefuck_cache ]] && source $_thefuck_cache
+    unset _thefuck_cache
 fi
 
 #source $ENTR_CONFIG
