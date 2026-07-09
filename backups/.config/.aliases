@@ -71,6 +71,7 @@ if command -v fzf-tmux &> /dev/null; then
 fi
 
 alias gcm="git commit -m"
+alias lg="lazygit"
 
 alias afa="autoflake --in-place --remove-unused-variables --remove-all-unused-imports  --recursive"
 
