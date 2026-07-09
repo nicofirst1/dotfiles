@@ -45,6 +45,25 @@ export LC_ALL='en_US.UTF-8';
 # Set up XDG directories
 export XDG_CONFIG_HOME="$HOME/.config"
 export XDG_CACHE_HOME="$HOME/.cache"
+export XDG_DATA_HOME="$HOME/.local/share"
+export XDG_STATE_HOME="$HOME/.local/state"
+
+# Keep tools from littering $HOME — point them at XDG dirs. Existing data was
+# relocated once by scripts/xdg-migrate.sh (idempotent; re-run on new machines).
+# Not redirected: pyenv (~/.pyenv, multi-GB conventional path) and pipx (nested
+# venvs w/ baked paths) — moving them costs more than the tidy is worth.
+export BUNDLE_USER_CONFIG="$XDG_CONFIG_HOME/bundle"
+export BUNDLE_USER_CACHE="$XDG_CACHE_HOME/bundle"
+export BUNDLE_USER_PLUGIN="$XDG_DATA_HOME/bundle"
+export NPM_CONFIG_CACHE="$XDG_CACHE_HOME/npm"
+export DOCKER_CONFIG="$XDG_CONFIG_HOME/docker"
+export IPYTHONDIR="$XDG_CONFIG_HOME/ipython"
+export JUPYTER_CONFIG_DIR="$XDG_CONFIG_HOME/jupyter"
+export MPLCONFIGDIR="$XDG_CONFIG_HOME/matplotlib"
+export BOTO_CONFIG="$XDG_CONFIG_HOME/gcloud/boto"
+export ANSIBLE_HOME="$XDG_DATA_HOME/ansible"
+export LESSHISTFILE="$XDG_STATE_HOME/less/history"
+export ZSHZ_DATA="$XDG_DATA_HOME/zsh-z/data"
 
 # Zinit — installer layout varies: the canonical install.sh clones to
 # share/zinit/zinit.git, but some installs end up nested as zinit.git/zinit.git.
