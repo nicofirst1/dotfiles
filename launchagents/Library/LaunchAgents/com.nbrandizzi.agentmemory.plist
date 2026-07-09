@@ -5,14 +5,15 @@
     <key>Label</key>
     <string>com.nbrandizzi.agentmemory</string>
 
-    <!-- Run the agentmemory worker (loads ~/.agentmemory/.env, spawns the iii
-         engine on :3111, viewer on :3113). node is invoked explicitly because
-         the cli.mjs shebang is `/usr/bin/env node` and launchd has a bare PATH. -->
+    <!-- Run via wrapper so ~/.agentmemory/.env is actually sourced into the
+         worker's environment (the Obsidian auto-export reads process.env
+         directly; the plist alone never plumbed it through). The wrapper also
+         pins the engine cwd. Portable — no absolute node/export paths here.
+         Mirrors com.nbrandizzi.litellm-router.plist. -->
     <key>ProgramArguments</key>
     <array>
-        <string>/opt/homebrew/bin/node</string>
-        <string>/opt/homebrew/lib/node_modules/@agentmemory/agentmemory/dist/cli.mjs</string>
-        <string>start</string>
+        <string>/bin/bash</string>
+        <string>/Users/nbrandizzi/dotfiles/scripts/agentmemory-run.sh</string>
     </array>
 
     <!-- THE fix: pin the engine's cwd so its relative `./data/state_store.db`
