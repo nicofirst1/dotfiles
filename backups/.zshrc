@@ -37,8 +37,9 @@ zinit light romkatv/powerlevel10k
 # compinit optimization and caching
 autoload -Uz compinit
 if [ -z "$ZSH_COMPDUMP" ]; then
-  ZSH_COMPDUMP="${ZDOTDIR:-$HOME}/.zcompdump-${SHORT_HOST}-${ZSH_VERSION}"
+  ZSH_COMPDUMP="${XDG_CACHE_HOME:-$HOME/.cache}/zsh/zcompdump-${SHORT_HOST}-${ZSH_VERSION}"
 fi
+[[ -d ${ZSH_COMPDUMP:h} ]] || mkdir -p ${ZSH_COMPDUMP:h}
 # Run the full compaudit security check at most once a day. On warm cache
 # (file exists AND was rebuilt within the last 24h) skip the audit with -C —
 # saves ~25ms per shell start. Wrapped in an anonymous function so
@@ -59,7 +60,8 @@ fi
 # from here https://github.com/zsh-users/zsh-autosuggestions/issues/645#issuecomment-1452340220
 setopt APPEND_HISTORY
 setopt SHARE_HISTORY
-HISTFILE=$HOME/.zhistory
+HISTFILE="${XDG_STATE_HOME:-$HOME/.local/state}/zsh/history"
+[[ -d ${HISTFILE:h} ]] || mkdir -p ${HISTFILE:h}
 SAVEHIST=1000
 HISTSIZE=999
 setopt HIST_EXPIRE_DUPS_FIRST
