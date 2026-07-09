@@ -320,3 +320,19 @@ start_ssh_agent() {
     eval $(ssh-agent -s)
     ssh-add
 }
+
+# Per-directory herdr: a bare `herdr` opens/attaches a session named after the
+# current folder, so each project gets its own persistent workspace rooted in
+# its dir (herdr's default single session stays rooted at its first launch dir).
+# Passes through untouched when already inside herdr or when given any args
+# (e.g. `herdr pane ...`, `herdr --remote ...`). bash/zsh compatible.
+herdr() {
+    if [ -n "$HERDR_PANE_ID" ] || [ "$#" -gt 0 ]; then
+        command herdr "$@"
+        return
+    fi
+    local name="${PWD##*/}"                 # basename
+    name="${name//[^a-zA-Z0-9._-]/-}"       # sanitize to a safe session name
+    [ -z "$name" ] && name=root             # PWD was "/"
+    command herdr --session "$name"
+}
