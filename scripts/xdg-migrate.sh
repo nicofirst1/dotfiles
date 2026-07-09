@@ -34,6 +34,7 @@ move "$HOME/.boto"       "$XDG_CONFIG_HOME/gcloud/boto"
 move "$HOME/.ansible"    "$XDG_DATA_HOME/ansible"
 move "$HOME/.lesshst"    "$XDG_STATE_HOME/less/history"
 move "$HOME/.z"          "$XDG_DATA_HOME/zsh-z/data"
+move "$HOME/.gitconfig"  "$XDG_CONFIG_HOME/git/config"  # git reads this path natively
 
 # .bundle is empty on this machine — bundler recreates it at the XDG paths.
 if [ -d "$HOME/.bundle" ] && [ -z "$(ls -A "$HOME/.bundle" 2>/dev/null)" ]; then

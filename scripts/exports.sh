@@ -74,7 +74,9 @@ else
     export ZINIT_HOME="$LOCAL_DIR/share/zinit/zinit.git"
 fi
 
-# path exports
+# path exports — `typeset -U` dedupes so sourcing this on every shell (via
+# .zshenv) doesn't stack duplicate PATH entries. zsh-only; bash has no `path`.
+[[ -n "$ZSH_VERSION" ]] && typeset -U path PATH
 export PATH="$PATH:$LOCAL_DIR/bin" # local bin
 export PATH="$PATH:$LOCAL_DIR/lib" # local lib
 export PATH="$PATH:$CARGO_HOME/bin" # cargo bin

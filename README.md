@@ -43,6 +43,23 @@ stow_restore
 
 Configuration paths and variables are set in `scripts/exports.sh`. Modify this file to customize the paths used by the scripts.
 
+### Shell startup: `.zshenv` vs `.zshrc`
+
+Environment variables live in `backups/.zshenv`, which zsh sources on **every**
+invocation (interactive shells, scripts, and non-interactive subprocesses).
+This is what makes tools spawned outside an interactive shell — `npm`, `git`,
+`cargo` — honor the XDG redirects instead of littering `$HOME`. `.zshenv`
+derives `DOTFILES_DIR` and sources `exports.sh`.
+
+`backups/.zshrc` is **interactive-only**: prompt, plugins, aliases, and
+completions. Don't put `export`s there — non-interactive shells never read it.
+
+Tools are pointed at [XDG base directories](https://specifications.freedesktop.org/basedir-spec/latest/)
+(`$XDG_CONFIG_HOME`, `$XDG_DATA_HOME`, etc.) in `exports.sh`. Machines populated
+before these redirects existed can relocate stray dotfiles with the idempotent
+`scripts/xdg-migrate.sh`. Run `xdg-ninja` (in `~/repos/libraries/xdg-ninja`) to
+audit `$HOME` for files that still belong under XDG paths.
+
 ## Machine-Specific Settings
 
 The scripts create a `.machine.sh` file in the home directory, which is sourced in `.zshrc`. Use this file to specify settings unique to the current machine.

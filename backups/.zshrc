@@ -1,14 +1,11 @@
 ######################################
-# ENVIRONMENT VARIABLES
+# INTERACTIVE SHELL CONFIG
 ######################################
 #zmodload zsh/zprof
 
-# Derive DOTFILES_DIR from this file's resolved location (handles the stow
-# symlink), so the repo can live anywhere without hardcoding a path.
-if [[ -z "$DOTFILES_DIR" ]]; then
-    export DOTFILES_DIR="${${(%):-%x}:A:h:h}"
-fi
-source "$DOTFILES_DIR/scripts/exports.sh"
+# Environment variables (DOTFILES_DIR, XDG dirs, tool redirects) are set in
+# .zshenv so they reach non-interactive shells too. This file is interactive-
+# only: prompt, plugins, aliases, completions.
 source $UTILS_F
 
 
