@@ -51,6 +51,7 @@ move "$HOME/.ansible"    "$XDG_DATA_HOME/ansible"
 move "$HOME/.lesshst"    "$XDG_STATE_HOME/less/history"
 move "$HOME/.z"          "$XDG_DATA_HOME/zsh-z/data"
 move "$HOME/.gitconfig"  "$XDG_CONFIG_HOME/git/config"  # git reads this path natively
+move "$HOME/.cups"       "$XDG_CONFIG_HOME/cups"         # CUPS reads $XDG_CONFIG_HOME/cups (OpenPrinting/cups#10)
 move "$HOME/.zhistory"   "$XDG_STATE_HOME/zsh/history"  # HISTFILE set to match in .zshrc
 move "$HOME/.python_history" "$XDG_STATE_HOME/python/history"  # PYTHONSTARTUP shim reads this (pre-3.13)
 move "$HOME/.local/pipx" "$XDG_DATA_HOME/pipx"          # then run: pipx reinstall-all (fixes baked venv paths)
@@ -60,6 +61,8 @@ move "$HOME/.local/pipx" "$XDG_DATA_HOME/pipx"          # then run: pipx reinsta
 trash "$HOME/.p10k.zsh"                              # -> $XDG_CONFIG_HOME/zsh/.p10k.zsh (sourced in .zshrc)
 for f in "$HOME"/.zcompdump*; do trash "$f"; done   # -> $XDG_CACHE_HOME/zsh/zcompdump-* (regenerated)
 trash "$HOME/.zhistory"                             # -> $XDG_STATE_HOME/zsh/history (may reappear until old shells close)
+trash "$HOME/.viminfo"                              # -> $XDG_STATE_HOME/vim/viminfo (viminfofile set in vim/vimrc)
+trash "$HOME/.wget-hsts"                            # -> $XDG_STATE_HOME/wget/hsts (hsts-file set in wget/wgetrc via WGETRC)
 
 # pyenv: only safe to drop the old ~/.pyenv once install-pyenv.sh has seeded the
 # new XDG root — guard on it so re-running this before the reinstall never nukes
