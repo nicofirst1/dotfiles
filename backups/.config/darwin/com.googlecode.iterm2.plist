@@ -3970,7 +3970,7 @@
 	<key>DisableFullscreenTransparency</key>
 	<false/>
 	<key>EnableAPIServer</key>
-	<false/>
+	<true/>
 	<key>GlobalKeyMap</key>
 	<dict>
 		<key>0x19-0x60000</key>
@@ -3983,26 +3983,52 @@
 		<key>0x68-0x180000-0x4</key>
 		<dict>
 			<key>Action</key>
-			<integer>28</integer>
+			<integer>60</integer>
 			<key>Apply Mode</key>
 			<integer>0</integer>
 			<key>Escaping</key>
 			<integer>2</integer>
 			<key>Text</key>
-			<string>D4F4940C-19BF-4561-817B-17B68C9FBB71</string>
+			<string>herdr_split(direction: "down", session_id: session.id)</string>
+			<key>Version</key>
+			<integer>2</integer>
+		</dict>
+		<key>0x74-0x100000-0x11</key>
+		<dict>
+			<key>Action</key>
+			<integer>60</integer>
+			<key>Apply Mode</key>
+			<integer>0</integer>
+			<key>Escaping</key>
+			<integer>2</integer>
+			<key>Text</key>
+			<string> herdr_tab(session_id: session.id)</string>
 			<key>Version</key>
 			<integer>2</integer>
 		</dict>
 		<key>0x76-0x180000-0x9</key>
 		<dict>
 			<key>Action</key>
-			<integer>29</integer>
+			<integer>60</integer>
 			<key>Apply Mode</key>
 			<integer>0</integer>
 			<key>Escaping</key>
 			<integer>2</integer>
 			<key>Text</key>
-			<string>D4F4940C-19BF-4561-817B-17B68C9FBB71</string>
+			<string>herdr_split(direction: "right", session_id: session.id)</string>
+			<key>Version</key>
+			<integer>2</integer>
+		</dict>
+		<key>0x77-0x100000-0xd</key>
+		<dict>
+			<key>Action</key>
+			<integer>60</integer>
+			<key>Apply Mode</key>
+			<integer>0</integer>
+			<key>Escaping</key>
+			<integer>2</integer>
+			<key>Text</key>
+			<string>herdr_close(session_id: session.id)</string>
 			<key>Version</key>
 			<integer>2</integer>
 		</dict>
