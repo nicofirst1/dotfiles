@@ -14,7 +14,18 @@ fi
 
 # Check if bat is installed and set aliases accordingly
 if command -v bat &> /dev/null; then
-    alias cat="bat"
+    # Route markdown files to glow (renders tables); everything else to bat.
+    # ponytail: switches on $1 only — pipes ($1 empty) and multi-file calls fall to bat.
+    if command -v glow &> /dev/null; then
+        cat() {
+            case "$1" in
+                *.md|*.markdown) glow "$@" ;;
+                *) command bat "$@" ;;
+            esac
+        }
+    else
+        alias cat="bat"
+    fi
 
     # Function to tail -f a file with bat
     tf() {
