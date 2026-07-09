@@ -6,11 +6,11 @@
 # paths from the start, so nothing to migrate there.
 #
 # Safe to re-run: each entry is skipped if the source is gone or the
-# destination already exists. Nothing is deleted (except an empty ~/.bundle).
+# destination already exists. Nothing is hard-deleted (except an empty
+# ~/.bundle) — stale copies go to the Trash (~/.Trash, 30-day recovery).
 #
-# Deliberately NOT migrated: pyenv (~/.pyenv, multi-GB, conventional path),
-# pipx (~/.local/pipx, venvs with baked-in absolute paths), gsutil, wget hsts,
-# python_history (needs Python 3.13+ for a clean relocation).
+# Deliberately NOT migrated: pyenv (~/.pyenv, multi-GB — moving it means
+# reinstalling every version), gsutil, wget hsts.
 
 : "${XDG_CONFIG_HOME:=$HOME/.config}"
 : "${XDG_CACHE_HOME:=$HOME/.cache}"
@@ -25,6 +25,19 @@ move() {
     mv "$src" "$dst" && echo "moved: ${src/#$HOME/~} -> ${dst/#$HOME/~}"
 }
 
+# Send a stale copy to the Trash instead of rm — recoverable for 30 days, and
+# it tells you what it took. De-collides on name so re-runs don't clobber.
+# ponytail: macOS ~/.Trash; on Linux the leftovers below don't exist so this
+# never fires — wire in gio trash / trash-cli here if that ever changes.
+trash() {
+    local src="$1" base dst n=2
+    [ -e "$src" ] || { echo "skip (no source):      ${src/#$HOME/~}"; return; }
+    base="$(basename "$src")"; dst="$HOME/.Trash/$base"
+    while [ -e "$dst" ]; do dst="$HOME/.Trash/${base}-${n}"; n=$((n + 1)); done
+    mkdir -p "$HOME/.Trash"
+    mv "$src" "$dst" && echo "trashed: ${src/#$HOME/~} -> ~/.Trash/${dst##*/}"
+}
+
 move "$HOME/.npm"        "$XDG_CACHE_HOME/npm"
 move "$HOME/.docker"     "$XDG_CONFIG_HOME/docker"
 move "$HOME/.ipython"    "$XDG_CONFIG_HOME/ipython"
@@ -36,6 +49,14 @@ move "$HOME/.lesshst"    "$XDG_STATE_HOME/less/history"
 move "$HOME/.z"          "$XDG_DATA_HOME/zsh-z/data"
 move "$HOME/.gitconfig"  "$XDG_CONFIG_HOME/git/config"  # git reads this path natively
 move "$HOME/.zhistory"   "$XDG_STATE_HOME/zsh/history"  # HISTFILE set to match in .zshrc
+move "$HOME/.python_history" "$XDG_STATE_HOME/python/history"  # PYTHONSTARTUP shim reads this (pre-3.13)
+move "$HOME/.local/pipx" "$XDG_DATA_HOME/pipx"          # then run: pipx reinstall-all (fixes baked venv paths)
+
+# Stale $HOME copies already superseded by repo-managed XDG configs — the
+# active versions live at the XDG paths, so these are dead weight. Trash them.
+trash "$HOME/.p10k.zsh"                              # -> $XDG_CONFIG_HOME/zsh/.p10k.zsh (sourced in .zshrc)
+for f in "$HOME"/.zcompdump*; do trash "$f"; done   # -> $XDG_CACHE_HOME/zsh/zcompdump-* (regenerated)
+trash "$HOME/.zhistory"                             # -> $XDG_STATE_HOME/zsh/history (may reappear until old shells close)
 
 # .bundle is empty on this machine — bundler recreates it at the XDG paths.
 if [ -d "$HOME/.bundle" ] && [ -z "$(ls -A "$HOME/.bundle" 2>/dev/null)" ]; then

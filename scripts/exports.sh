@@ -50,8 +50,8 @@ export XDG_STATE_HOME="$HOME/.local/state"
 
 # Keep tools from littering $HOME — point them at XDG dirs. Existing data was
 # relocated once by scripts/xdg-migrate.sh (idempotent; re-run on new machines).
-# Not redirected: pyenv (~/.pyenv, multi-GB conventional path) and pipx (nested
-# venvs w/ baked paths) — moving them costs more than the tidy is worth.
+# Not redirected: pyenv (~/.pyenv, multi-GB conventional path) — moving it means
+# reinstalling every version, so it stays put.
 export BUNDLE_USER_CONFIG="$XDG_CONFIG_HOME/bundle"
 export BUNDLE_USER_CACHE="$XDG_CACHE_HOME/bundle"
 export BUNDLE_USER_PLUGIN="$XDG_DATA_HOME/bundle"
@@ -64,6 +64,8 @@ export BOTO_CONFIG="$XDG_CONFIG_HOME/gcloud/boto"
 export ANSIBLE_HOME="$XDG_DATA_HOME/ansible"
 export LESSHISTFILE="$XDG_STATE_HOME/less/history"
 export ZSHZ_DATA="$XDG_DATA_HOME/zsh-z/data"
+export PIPX_HOME="$XDG_DATA_HOME/pipx"          # relocated via `pipx reinstall-all`; bin stays ~/.local/bin
+export PYTHONSTARTUP="$XDG_CONFIG_HOME/python/pythonstartup.py"  # REPL history -> XDG (pre-3.13: no PYTHON_HISTORY)
 
 # Zinit — installer layout varies: the canonical install.sh clones to
 # share/zinit/zinit.git, but some installs end up nested as zinit.git/zinit.git.
