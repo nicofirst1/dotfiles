@@ -72,6 +72,9 @@ export PYTHONSTARTUP="$XDG_CONFIG_HOME/python/pythonstartup.py"  # REPL history 
 # scripts/install-pyenv.sh seeds the versions here; xdg-migrate.sh trashes the
 # old ~/.pyenv once they exist.
 export PYENV_ROOT="$XDG_DATA_HOME/pyenv"
+# Claude Code: old ~/.claude copied (not moved) to $XDG_CONFIG_HOME/claude —
+# verifying nothing still writes to the old path before trashing it.
+export CLAUDE_CONFIG_DIR="$XDG_CONFIG_HOME/claude"
 
 # Zinit — installer layout varies: the canonical install.sh clones to
 # share/zinit/zinit.git, but some installs end up nested as zinit.git/zinit.git.
