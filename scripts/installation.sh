@@ -4,7 +4,7 @@
 # On macOS: installs Homebrew (if missing), applies macOS defaults, installs
 # packages from the Brewfile. On both platforms: installs zsh, zinit, stow,
 # rust + rust CLIs, fzf, stows the backups/ tree to $HOME, and creates
-# ~/.machine.sh for machine-specific config.
+# ~/.secrets.env (the single KEY=VALUE secrets file, chmod 600).
 
 # Source the variables file (derive its location so the repo works anywhere)
 _install_self="$(readlink -f "${BASH_SOURCE[0]}")"
@@ -150,9 +150,11 @@ if [[ "$OSTYPE" == "linux-gnu"* ]] && command -v ptyxis &>/dev/null && command -
     fi
 fi
 
-# Create the machine source file if not present
-if [ ! -f "$MACHINE_SOURCE" ]; then
-    touch "$MACHINE_SOURCE"
+# Create the single secrets file if not present (KEY=VALUE, chmod 600).
+# Scripts that need a secret source this file on demand; it is never sourced
+# into the interactive shell, so secrets stay out of the global environment.
+if [ ! -f "$HOME/.secrets.env" ]; then
+    ( umask 077; touch "$HOME/.secrets.env" )
 fi
 
 echo "Installation and setup complete. Please restart your terminal."

@@ -145,9 +145,6 @@ fi
 
 #source $ENTR_CONFIG
 
-# source machine dependent stuff, for example conda
-[ -f "$MACHINE_SOURCE" ] && source "$MACHINE_SOURCE"
-
 [ -f "${XDG_CONFIG_HOME:-$HOME/.config}"/fzf/fzf.zsh ] && source "${XDG_CONFIG_HOME:-$HOME/.config}"/fzf/fzf.zsh
 
 # Run zinit cdreplay to set up completions after plugins are loaded

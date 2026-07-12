@@ -31,7 +31,7 @@ set -euo pipefail
 ENV_FILE="${ENV_FILE:-${HOME}/.agentmemory/.env}"
 LOG_FILE="${LOG_FILE:-${HOME}/Library/Logs/agentmemory/power-guard.log}"
 OLLAMA_BIN="${OLLAMA_BIN:-/usr/local/bin/ollama}"
-KEY_FILE="${FHGENIE_KEY_FILE:-${HOME}/.employer-api-key}"
+KEY_FILE="${FHGENIE_KEY_FILE:-${HOME}/.secrets.env}"
 
 # Hysteresis: how many consecutive polls must agree on the NEW state before we
 # actually flip .env. At the 30s poll interval, 3 => a 90s confirmation window.

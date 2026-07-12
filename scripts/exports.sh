@@ -14,7 +14,6 @@ if [[ -z "$DOTFILES_DIR" ]]; then
 fi
 export SCRIPTS_DIR="$DOTFILES_DIR/scripts"       # Directory for storing scripts
 export BACKUP_DIR="$DOTFILES_DIR/backups"       # Directory for storing backups
-export MACHINE_SOURCE="$HOME/.machine.sh"       # Path to machine-specific configuration file
 export CONFIG_DIR="$HOME/.config"       # Directory for storing configuration files
 export LOCAL_DIR="$HOME/.local"       # Directory for storing local files
 

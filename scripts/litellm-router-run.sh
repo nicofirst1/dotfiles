@@ -2,7 +2,7 @@
 #
 # litellm-router-run.sh  —  launcher for the LiteLLM router LaunchAgent
 #
-# Sources the IAIS GenAI credentials out of ~/.employer-api-key (kept OUT of the
+# Sources the IAIS GenAI credentials out of ~/.secrets.env (kept OUT of the
 # repo and out of the plist), builds the Basic-auth header the config expects,
 # then execs the pipx-isolated litellm proxy against config/litellm/config.yaml.
 #
@@ -15,7 +15,7 @@
 # fastapi). See scripts/install-litellm-router.sh.
 #
 # Overridable via env (defaults in brackets):
-#   FHGENIE_KEY_FILE  [~/.employer-api-key]   file with BASE_URL= and API_KEY=
+#   FHGENIE_KEY_FILE  [~/.secrets.env]        file with BASE_URL= and API_KEY=
 #   LITELLM_BIN       [~/.local/bin/litellm]  pipx-installed proxy binary
 #   LITELLM_CONFIG    [<repo>/config/litellm/config.yaml]
 #   LITELLM_HOST      [127.0.0.1]
@@ -23,7 +23,7 @@
 
 set -euo pipefail
 
-KEY_FILE="${FHGENIE_KEY_FILE:-$HOME/.employer-api-key}"
+KEY_FILE="${FHGENIE_KEY_FILE:-$HOME/.secrets.env}"
 LITELLM_BIN="${LITELLM_BIN:-$HOME/.local/bin/litellm}"
 HOST="${LITELLM_HOST:-127.0.0.1}"
 PORT="${LITELLM_PORT:-4141}"

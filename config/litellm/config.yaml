@@ -3,7 +3,7 @@
 # =============================================================================
 # Provisioned by scripts/install-litellm-router.sh. Run by the LaunchAgent via
 # scripts/litellm-router-run.sh, which exports IAIS_BASE_URL + IAIS_AUTH_HEADER
-# (Basic auth) out of ~/.employer-api-key (NO secrets live in this file or repo).
+# (Basic auth) out of ~/.secrets.env (NO secrets live in this file or repo).
 #
 # Why IAIS GenAI (genai.iais.fraunhofer.de/api/v2) over corporate FhGenie:
 #   - It hosts fast NON-reasoning instruct models. The old MiniMax-M2.5 was a

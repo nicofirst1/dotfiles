@@ -13,7 +13,7 @@
 # fallback:
 #   1. litellm[proxy]                 -> pipx (isolated venv; the pyenv shim is
 #                                        dependency-broken, so we never use it)
-#   2. preflight                       -> ~/.employer-api-key, IAIS reachable,
+#   2. preflight                       -> ~/.secrets.env, IAIS reachable,
 #                                        Ollama up (fallback path)
 #   3. the LaunchAgent (router :4000)  -> stowed + loaded
 #   4. health + smoke test             -> memory-default answers via the proxy
@@ -30,7 +30,7 @@ set -euo pipefail
 
 ROUTER_LABEL="com.nbrandizzi.litellm-router"
 ROUTER_URL="http://127.0.0.1:4141"
-KEY_FILE="${FHGENIE_KEY_FILE:-$HOME/.employer-api-key}"
+KEY_FILE="${FHGENIE_KEY_FILE:-$HOME/.secrets.env}"
 LITELLM_BIN="$HOME/.local/bin/litellm"
 LOG_DIR="$HOME/Library/Logs/litellm"
 
