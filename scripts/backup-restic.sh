@@ -34,6 +34,7 @@ export RCLONE_DRIVE_PACER_BURST="${RCLONE_DRIVE_PACER_BURST:-1}"
 
 CLAUDE_DIR="${CLAUDE_CONFIG_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/claude}"
 HERMES_HOME="${HERMES_HOME:-${XDG_CONFIG_HOME:-$HOME/.config}/hermes}"
+AGENTMEMORY="${AGENTMEMORY_HOME:-$HOME/.agentmemory}"
 STAGING="$HOME/.config/restic/staging"
 
 die() { printf 'backup-restic: %s\n' "$*" >&2; exit 1; }
@@ -57,7 +58,12 @@ fi
 # 2. The backup. Include the precious trees + staged DBs; exclude everything
 #    reinstallable (plugins, the hermes-agent codebase, bins) or regenerable
 #    (caches, logs, live DBs — staged copies are backed up instead).
-restic backup "$CLAUDE_DIR" "$HERMES_HOME" "$STAGING" \
+# ponytail: .agentmemory is backed up live (worker keeps writing). Safe because
+#   it's event-sourced — stream_store is append-only (torn tail is recoverable),
+#   state_store is a derived index rebuildable from the streams. If a guaranteed-
+#   consistent snapshot is ever needed, pause com.nbrandizzi.agentmemory (or
+#   `iii trigger` a checkpoint) around this call.
+restic backup "$CLAUDE_DIR" "$HERMES_HOME" "$AGENTMEMORY" "$STAGING" \
     --tag claude-hermes \
     --pack-size 128 \
     -o rclone.connections=2 \
@@ -78,6 +84,13 @@ restic backup "$CLAUDE_DIR" "$HERMES_HOME" "$STAGING" \
     --exclude "$HERMES_HOME/*.db-wal" \
     --exclude "$HERMES_HOME/*.db-shm" \
     --exclude "$HERMES_HOME/*.db-journal" \
+    --exclude "$AGENTMEMORY/bin" \
+    --exclude "$AGENTMEMORY/data.bak-*" \
+    --exclude "$AGENTMEMORY/backups" \
+    --exclude "$AGENTMEMORY/*.log" \
+    --exclude "$AGENTMEMORY/*.pid" \
+    --exclude "$AGENTMEMORY/.env.bak.*" \
+    --exclude "$AGENTMEMORY/.env.pre-litellm.*" \
     --exclude "**/.DS_Store" \
     --exclude "**/*.lock"
 
