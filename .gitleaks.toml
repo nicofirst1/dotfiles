@@ -1,0 +1,8 @@
+[extend]
+useDefault = true
+
+[[rules]]
+id = "generic-connection-string"
+description = "Connection string with embedded credentials (postgres://user:pass@host, mysql://, mongodb://, redis://, amqp://, etc.)"
+regex = '''[a-zA-Z][a-zA-Z0-9+.-]*://[^:@/\s'"]+:[^@/\s'"]+@[^/\s'"]+'''
+tags = ["credentials", "generic", "connection-string"]
