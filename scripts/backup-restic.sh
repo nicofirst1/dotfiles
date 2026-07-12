@@ -26,6 +26,12 @@ RESTIC_ENV="${RESTIC_ENV:-$HOME/.config/restic/env}"
 export RESTIC_REPOSITORY="${RESTIC_REPOSITORY:-rclone:gdrive:}"
 export RESTIC_PASSWORD_FILE="${RESTIC_PASSWORD_FILE:-$HOME/.config/restic/password}"
 
+# Google Drive rate-limits hard on bursts of small uploads (worse via rclone's
+# shared API client). Stay under the per-minute quota: gentle drive pacing here,
+# plus fewer+bigger packs and limited connections on the backup call below.
+export RCLONE_DRIVE_PACER_MIN_SLEEP="${RCLONE_DRIVE_PACER_MIN_SLEEP:-200ms}"
+export RCLONE_DRIVE_PACER_BURST="${RCLONE_DRIVE_PACER_BURST:-1}"
+
 CLAUDE_DIR="${CLAUDE_CONFIG_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/claude}"
 HERMES_HOME="${HERMES_HOME:-${XDG_CONFIG_HOME:-$HOME/.config}/hermes}"
 STAGING="$HOME/.config/restic/staging"
@@ -53,6 +59,8 @@ fi
 #    (caches, logs, live DBs — staged copies are backed up instead).
 restic backup "$CLAUDE_DIR" "$HERMES_HOME" "$STAGING" \
     --tag claude-hermes \
+    --pack-size 128 \
+    -o rclone.connections=2 \
     --exclude-caches \
     --exclude "$CLAUDE_DIR/plugins" \
     --exclude "$CLAUDE_DIR/paste-cache" \
