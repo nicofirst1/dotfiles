@@ -15,7 +15,15 @@
 
 set -euo pipefail
 
-export RESTIC_REPOSITORY="${RESTIC_REPOSITORY:-rclone:gdrive:backups/claude-hermes-restic}"
+# Machine-specific repo location lives in a LOCAL env file (dotfiles is public),
+# written by install-restic-backup.sh. It pins the repo to a Drive folder by ID
+# (RCLONE_DRIVE_ROOT_FOLDER_ID) so rclone stays at drive.file scope — the backup
+# can only touch its own folder, never the rest of the Drive.
+RESTIC_ENV="${RESTIC_ENV:-$HOME/.config/restic/env}"
+# shellcheck source=/dev/null
+[[ -f "$RESTIC_ENV" ]] && source "$RESTIC_ENV"
+
+export RESTIC_REPOSITORY="${RESTIC_REPOSITORY:-rclone:gdrive:}"
 export RESTIC_PASSWORD_FILE="${RESTIC_PASSWORD_FILE:-$HOME/.config/restic/password}"
 
 CLAUDE_DIR="${CLAUDE_CONFIG_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/claude}"

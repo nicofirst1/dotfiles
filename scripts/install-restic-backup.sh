@@ -24,9 +24,10 @@ SELF="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOTFILES_DIR="$(cd "$SELF/.." && pwd)"
 
 LABEL="com.nbrandizzi.restic-backup"
-export RESTIC_REPOSITORY="${RESTIC_REPOSITORY:-rclone:gdrive:backups/claude-hermes-restic}"
 PASS_FILE="$HOME/.config/restic/password"
 export RESTIC_PASSWORD_FILE="$PASS_FILE"
+ENV_FILE="$HOME/.config/restic/env"
+DRIVE_FOLDER="${RESTIC_DRIVE_FOLDER:-Agents-Sessions}"
 LOG_DIR="$HOME/Library/Logs/restic"
 
 say()  { printf '\033[1;34m==>\033[0m %s\n' "$*"; }
@@ -64,15 +65,43 @@ else
     NEW_PASS=1
 fi
 
-# --- 4. restic init (idempotent) -------------------------------------------
-if restic cat config >/dev/null 2>&1; then
-    say "restic repo already initialized at $RESTIC_REPOSITORY."
+# --- 4. repo location: a LOCAL env file pins the Drive folder by ID ---------
+# Keeping drive.file scope means rclone can only touch folders it created, so we
+# create the folder, pin it by ID, and let you file it anywhere in the Drive UI.
+# The ID (not a secret, but machine-specific) lives in $ENV_FILE, never in git.
+if [[ -f "$ENV_FILE" ]]; then
+    say "Using existing repo config ($ENV_FILE)."
+    # shellcheck source=/dev/null
+    source "$ENV_FILE"
 else
-    say "Initializing restic repo at $RESTIC_REPOSITORY..."
+    say "Creating Drive folder '$DRIVE_FOLDER' and pinning it by ID..."
+    rclone mkdir "gdrive:$DRIVE_FOLDER" 2>/dev/null || true
+    FID="$(rclone lsf --dirs-only --format 'ip' gdrive: 2>/dev/null | awk -F';' -v d="$DRIVE_FOLDER/" '$2==d{print $1}' | head -1)"
+    [[ -n "$FID" ]] || die "could not resolve folder ID for gdrive:$DRIVE_FOLDER"
+    umask 077
+    cat > "$ENV_FILE" <<EOF
+# Local restic config — pins the backup to a Drive folder by ID so rclone stays
+# at drive.file scope (agents can only touch this folder). NOT tracked in git.
+export RESTIC_REPOSITORY="rclone:gdrive:"
+export RCLONE_DRIVE_ROOT_FOLDER_ID="$FID"
+EOF
+    chmod 600 "$ENV_FILE"
+    # shellcheck source=/dev/null
+    source "$ENV_FILE"
+    warn "Created gdrive:$DRIVE_FOLDER at your Drive root — drag it wherever you"
+    warn "want in the Drive UI (e.g. Projects/Data/); the ID pin keeps it working."
+fi
+export RESTIC_REPOSITORY RCLONE_DRIVE_ROOT_FOLDER_ID
+
+# --- 5. restic init (idempotent) -------------------------------------------
+if restic cat config >/dev/null 2>&1; then
+    say "restic repo already initialized (folder ID ${RCLONE_DRIVE_ROOT_FOLDER_ID:-?})."
+else
+    say "Initializing restic repo in gdrive folder $DRIVE_FOLDER..."
     restic init || die "restic init failed (check gdrive: and the password file)."
 fi
 
-# --- 5. LaunchAgent --------------------------------------------------------
+# --- 6. LaunchAgent --------------------------------------------------------
 mkdir -p "$LOG_DIR"
 command -v stow >/dev/null && { say "Stowing launchagents..."; stow --dir="$DOTFILES_DIR" --target="$HOME" --restow launchagents; } \
     || warn "stow not found — link the plist by hand."
@@ -91,7 +120,7 @@ fi
 
 # --- done ------------------------------------------------------------------
 say "restic backup provisioned."
-echo "  repo   : $RESTIC_REPOSITORY"
+echo "  repo   : gdrive folder '$DRIVE_FOLDER' (pinned by ID ${RCLONE_DRIVE_ROOT_FOLDER_ID:-?})"
 echo "  agent  : $LABEL (daily 04:00)"
 echo "  logs   : $LOG_DIR/restic.{stdout,stderr}.log"
 echo "  run now: bash $SELF/backup-restic.sh"
