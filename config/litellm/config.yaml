@@ -29,11 +29,14 @@ model_list:
       api_key: "unused-basic-auth-in-extra_headers"
       extra_headers: {"Authorization": "os.environ/IAIS_AUTH_HEADER"}
       max_tokens: 8192                                     # ample for batch JSON
+      timeout: 30                                          # fails fast off-VPN instead of eating the 120s ceiling
   - model_name: memory-fallback
     litellm_params:
       model: openai/mistral:7b-instruct            # local Ollama, used only when
       api_base: http://localhost:11434/v1          # IAIS is unreachable
       api_key: ollama                              # (off-VPN / off-net).
+      max_tokens: 4096                              # missing key caused a negative-max_tokens 400
+      timeout: 140                                  # covers the 40-90s single-GPU-slot inference
 
   # ---- direct aliases (manual use / debugging; not in the auto chain) --------
   - model_name: iais-mistral-small
@@ -61,10 +64,11 @@ model_list:
       api_key: ollama
 
 litellm_settings:
-  # 120s ceiling covers the SLOW fallback path: local mistral on a single GPU
-  # runs 40-76s. The IAIS primary returns in ~10s, so this never bites it.
-  request_timeout: 120
-  num_retries: 1
+  # No global request_timeout: memory-default (~10s on-VPN) and memory-fallback
+  # (40-90s local GPU) are ~10x apart in latency, so one number can't serve both -
+  # each model carries its own `timeout:` above instead.
+  num_retries: 0
   # IAIS primary -> Ollama fallback. Each alias carries its own model name,
-  # which is exactly what sidesteps agentmemory bug #778.
+  # which is exactly what sidesteps agentmemory bug #778. The fallback chain is
+  # the retry, so num_retries stays 0 to avoid doubling latency on failure.
   fallbacks: [{"memory-default": ["memory-fallback"]}]
