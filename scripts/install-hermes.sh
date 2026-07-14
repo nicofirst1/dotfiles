@@ -14,7 +14,8 @@
 # script makes the *durable* pieces reproducible by symlinking them back into git:
 #
 #   1. $HERMES_HOME/config.yaml -> config/hermes/config.yaml  (this repo)
-#   2. $HERMES_HOME/memories    -> claude_memory/hermes/memories
+#   2. $HERMES_HOME/SOUL.md     -> claude_memory/hermes/SOUL.md
+#   3. $HERMES_HOME/memories    -> claude_memory/hermes/memories
 #
 # Everything else stays LOCAL by design: state.db (+ -wal/-shm) is a live sqlite
 # DB that must never go in git (binary, unmergeable, corrupts on cloud-sync while
@@ -97,7 +98,9 @@ mkdir -p "$HERMES_HOME"
 # --- 1 + 2. the durable symlinks --------------------------------------------
 say "Wiring durable Hermes data into git..."
 mkdir -p "$CLAUDE_MEMORY_DIR/hermes/memories"   # source of truth for memories
+mkdir -p "$CLAUDE_MEMORY_DIR/hermes"
 link "$DOTFILES_DIR/config/hermes/config.yaml" "$HERMES_HOME/config.yaml"
+link "$CLAUDE_MEMORY_DIR/hermes/SOUL.md" "$HERMES_HOME/SOUL.md"
 link "$CLAUDE_MEMORY_DIR/hermes/memories"       "$HERMES_HOME/memories"
 
 # --- 3. opt-in: native backup cron for the local-only state -----------------

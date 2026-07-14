@@ -75,15 +75,6 @@ export PYENV_ROOT="$XDG_DATA_HOME/pyenv"
 # verifying nothing still writes to the old path before trashing it.
 export CLAUDE_CONFIG_DIR="$XDG_CONFIG_HOME/claude"
 
-# Hermes Agent (NousResearch) is monolithic + non-XDG: a single HERMES_HOME
-# holds config, secrets, AND data (memories/, sessions/, cache/, logs/) with no
-# separate config/data env vars. Point it at XDG config; scripts/install-hermes.sh
-# symlinks the durable memories/ into the claude_memory repo so it's versioned
-# there, and keeps config.yaml stow-tracked from config/hermes/. Everything else
-# stays local: sessions/ is a regenerated mirror of state.db (not durable), and
-# cache/logs are transient. Secrets (.env, auth.json) stay local, never tracked.
-export HERMES_HOME="$XDG_CONFIG_HOME/hermes"
-
 # Zinit — installer layout varies: the canonical install.sh clones to
 # share/zinit/zinit.git, but some installs end up nested as zinit.git/zinit.git.
 # Prefer the nested layout if it exists, else fall back to the flat one.
