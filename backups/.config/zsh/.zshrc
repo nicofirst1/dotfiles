@@ -27,7 +27,7 @@ source "$ZINIT_HOME/zinit.zsh"
 
 
 # Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
-source "$CONFIG_DIR/zsh/.p10k.zsh"
+source "$XDG_CONFIG_HOME/zsh/.p10k.zsh"
 
 
 # Load Powerlevel10k theme with Turbo Mode
@@ -109,7 +109,7 @@ zinit light-mode for \
 # Agnoster & Powerlevel10k stuff
 DEFAULT_USER=$(whoami)
 
-OPENCODE_CONFIG_DIR="$CONFIG_DIR/opencode"
+OPENCODE_CONFIG_DIR="$XDG_CONFIG_HOME/opencode"
 
 # Aliases
 source $ALIASES_F
@@ -119,11 +119,11 @@ ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=4'
 
 
 # FZF setup
-source "$CONFIG_DIR/fzf/fzf-init"
+source "$XDG_CONFIG_HOME/fzf/fzf-init"
 
 # if python is installed
 if command -v python3 &> /dev/null; then
-   source $CONFIG_DIR/python/settings.sh
+   source $XDG_CONFIG_HOME/python/settings.sh
 fi
 
 
