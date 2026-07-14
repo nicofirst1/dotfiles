@@ -14,22 +14,30 @@ if [[ -z "$DOTFILES_DIR" ]]; then
 fi
 export SCRIPTS_DIR="$DOTFILES_DIR/scripts"       # Directory for storing scripts
 export BACKUP_DIR="$DOTFILES_DIR/backups"       # Directory for storing backups
-export CONFIG_DIR="$HOME/.config"       # Directory for storing configuration files
 export LOCAL_DIR="$HOME/.local"       # Directory for storing local files
+
+# Set up XDG directories early: several tools (lazygit, delta, etc.) read a
+# bare CONFIG_DIR env var themselves to relocate their ENTIRE config dir, so
+# we must never export a generic CONFIG_DIR here - reuse XDG_CONFIG_HOME
+# instead (same value: $HOME/.config) to avoid clobbering their lookup.
+export XDG_CONFIG_HOME="$HOME/.config"
+export XDG_CACHE_HOME="$HOME/.cache"
+export XDG_DATA_HOME="$HOME/.local/share"
+export XDG_STATE_HOME="$HOME/.local/state"
 
 # Set up files
 export ZSHRC_F="${ZDOTDIR:-$HOME}/.zshrc"       # Path to Zsh configuration file (under $ZDOTDIR)
 export UTILS_F="$SCRIPTS_DIR/functions.sh"       # Path to utility functions file
 export EXPORTS_F="$SCRIPTS_DIR/exports.sh"     # Path to exports file
-export ALIASES_F="$CONFIG_DIR/.aliases"       # Path to Zsh aliases file
+export ALIASES_F="$XDG_CONFIG_HOME/.aliases"       # Path to Zsh aliases file
 
 # machine dependent
-export DARWIN_SETTING_D="$CONFIG_DIR/darwin"       # Path to macOS-specific Zsh settings file
+export DARWIN_SETTING_D="$XDG_CONFIG_HOME/darwin"       # Path to macOS-specific Zsh settings file
 export DARWIN_SETTING_F="$DARWIN_SETTING_D/settings"       # Path to macOS-specific Zsh settings file
-export LINUX_SETTING_F="$CONFIG_DIR/zsh/linux_settings.zsh"       # Path to Linux-specific Zsh settings file
+export LINUX_SETTING_F="$XDG_CONFIG_HOME/zsh/linux_settings.zsh"       # Path to Linux-specific Zsh settings file
 
 # Entr
-export ENTR_DIR="$CONFIG_DIR/entr"       # Path to the entr repository
+export ENTR_DIR="$XDG_CONFIG_HOME/entr"       # Path to the entr repository
 export ENTR_CONFIG="$ENTR_DIR/conf.sh"       # Path to the entr configuration file
 
 # RUST SETUP
@@ -40,12 +48,6 @@ export CARGO_HOME="$LOCAL_DIR/cargo"       # Path to Cargo installation director
 # Prefer US English and use UTF-8.
 export LANG='en_US.UTF-8';
 export LC_ALL='en_US.UTF-8';
-
-# Set up XDG directories
-export XDG_CONFIG_HOME="$HOME/.config"
-export XDG_CACHE_HOME="$HOME/.cache"
-export XDG_DATA_HOME="$HOME/.local/share"
-export XDG_STATE_HOME="$HOME/.local/state"
 
 # Keep tools from littering $HOME — point them at XDG dirs. Existing data was
 # relocated once by scripts/xdg-migrate.sh (idempotent; re-run on new machines).
