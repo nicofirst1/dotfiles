@@ -56,7 +56,7 @@ if [[ "$OSTYPE" == "linux-gnu"* ]] && command -v apt-get &>/dev/null; then
         nodejs sshpass
     # Nice-to-haves — install best-effort, one at a time so a missing package
     # in the user's repos (e.g. mc on some distros) doesn't fail the whole step.
-    for pkg in mc wireguard-tools ffmpeg autojump cowsay fortune-mod lolcat glab yarnpkg; do
+    for pkg in mc wireguard-tools ffmpeg autojump cowsay fortune-mod lolcat glab yarnpkg lazygit; do
         sudo apt-get install -y "$pkg" || echo "warn: skipped $pkg (not available)"
     done
     # Debian/Ubuntu renames a couple of binaries to avoid clashes; symlink
