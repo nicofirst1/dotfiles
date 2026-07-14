@@ -22,3 +22,4 @@ backups/.config/zsh/.zprofile
 
 # --- macOS / editor noise ---
 .DS_Store
+__pycache__/

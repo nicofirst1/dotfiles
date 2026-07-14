@@ -3,7 +3,7 @@
 
 Covers: Homebrew formulae, macOS apps (incl. casks), Claude Code skills,
 plugins, and MCP servers. Usage is mined from your Claude transcripts
-(~/.claude/projects/*.jsonl), your zsh history, Homebrew receipts, and
+($CLAUDE_CONFIG_DIR/projects/*.jsonl), your zsh history, Homebrew receipts, and
 Spotlight's last-opened metadata (mdls).
 
   audit-unused.py                 # candidates only (never / stale)
@@ -24,7 +24,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 HOME = Path.home()
-PROJECTS = HOME / ".claude" / "projects"
+# Respect CLAUDE_CONFIG_DIR (XDG); fall back to Claude Code's built-in ~/.claude default.
+CLAUDE_CONFIG = Path(os.environ["CLAUDE_CONFIG_DIR"]) if os.environ.get("CLAUDE_CONFIG_DIR") else HOME / ".claude"
+PROJECTS = CLAUDE_CONFIG / "projects"
 NOW = datetime.now(timezone.utc)
 
 # --- regexes over raw transcript lines (faster than json.loads per line) ---
@@ -107,7 +109,7 @@ def skill_usage_for(leaf, usage):
 def installed_skills():
     """leaf-name -> install-date-proxy (dir mtime iso). Dedup by leaf."""
     out = {}
-    roots = [HOME / ".claude" / "skills", HOME / ".claude" / "plugins" / "cache"]
+    roots = [CLAUDE_CONFIG / "skills", CLAUDE_CONFIG / "plugins" / "cache"]
     for root in roots:
         for sk in root.glob("**/SKILL.md"):
             leaf = sk.parent.name
@@ -118,7 +120,7 @@ def installed_skills():
 
 def installed_plugins():
     """name -> {installedAt, lastUpdated, skills:[leaf...]}"""
-    fp = HOME / ".claude" / "plugins" / "installed_plugins.json"
+    fp = CLAUDE_CONFIG / "plugins" / "installed_plugins.json"
     if not fp.exists():
         return {}
     data = json.loads(fp.read_text()).get("plugins", {})
@@ -137,7 +139,7 @@ def installed_plugins():
 
 
 def configured_mcp():
-    fp = HOME / ".claude.json"
+    fp = CLAUDE_CONFIG / ".claude.json"
     if not fp.exists():
         return set()
     d = json.loads(fp.read_text())
