@@ -2,19 +2,21 @@
 # LiteLLM router for agentmemory  —  IAIS GenAI (primary) + local Ollama (fallback)
 # =============================================================================
 # Provisioned by scripts/install-litellm-router.sh. Run by the LaunchAgent via
-# scripts/litellm-router-run.sh, which exports IAIS_BASE_URL + IAIS_AUTH_HEADER
-# (Basic auth) out of ~/.secrets.env (NO secrets live in this file or repo).
+# scripts/litellm-router-run.sh, which exports IAIS_BASE_URL + FHG_API_KEY out
+# of ~/.secrets.env (NO secrets live in this file or repo).
 #
 # Why IAIS GenAI (genai.iais.fraunhofer.de/api/v2) over corporate FhGenie:
-#   - It hosts fast NON-reasoning instruct models. The old MiniMax-M2.5 was a
-#     reasoning model: its hidden reasoning_content exhausted max_tokens and
-#     returned EMPTY content, so graph extraction committed 0 nodes. A plain
-#     instruct model (Mistral-Small) emits the answer directly — no reasoning tax.
 #   - klartext battle-tested this endpoint; treated as always-up with net+creds.
+#   - As of 2026-07, EVERY chat model IAIS hosts reports thinking_model:true
+#     (Mistral-Small, the old non-reasoning pick, was retired from the catalog).
+#     gpt-oss-20b was probed directly and returns real `content` well inside
+#     max_tokens (43 completion tokens for a trivial prompt) - the empty-content
+#     failure mode the old MiniMax-M2.5 hit doesn't reproduce here, so it's fine
+#     despite being a reasoning model on paper.
 #
-# Auth: IAIS uses HTTP Basic (base64 user:pass), NOT a Bearer key. LiteLLM sends
-# Bearer by default, so we inject the Basic header via extra_headers. api_key is
-# an unused placeholder (extra_headers.Authorization wins on the wire).
+# Auth: IAIS switched from HTTP Basic to a bearer API key (2026-07). LiteLLM
+# sends `Authorization: Bearer <api_key>` by default, so api_key: os.environ/FHG_API_KEY
+# is all that's needed - no extra_headers hack required anymore.
 #
 # Why a router at all: agentmemory's native FALLBACK_PROVIDERS is broken (#778) —
 # it sends the PRIMARY model name to the fallback provider -> 404. The router maps
@@ -24,10 +26,9 @@ model_list:
   # ---- what agentmemory points at (OPENAI_MODEL=memory-default) --------------
   - model_name: memory-default
     litellm_params:
-      model: openai/Mistral-Small-3.2-24B-Instruct-2506   # IAIS, non-reasoning, ~10s
+      model: openai/gpt-oss-20b                            # IAIS, ~40 completion tokens for trivial prompts
       api_base: os.environ/IAIS_BASE_URL
-      api_key: "unused-basic-auth-in-extra_headers"
-      extra_headers: {"Authorization": "os.environ/IAIS_AUTH_HEADER"}
+      api_key: os.environ/FHG_API_KEY
       max_tokens: 8192                                     # ample for batch JSON
       timeout: 30                                          # fails fast off-VPN instead of eating the 120s ceiling
   - model_name: memory-fallback
@@ -39,24 +40,16 @@ model_list:
       timeout: 140                                  # covers the 40-90s single-GPU-slot inference
 
   # ---- direct aliases (manual use / debugging; not in the auto chain) --------
-  - model_name: iais-mistral-small
-    litellm_params:
-      model: openai/Mistral-Small-3.2-24B-Instruct-2506
-      api_base: os.environ/IAIS_BASE_URL
-      api_key: "unused"
-      extra_headers: {"Authorization": "os.environ/IAIS_AUTH_HEADER"}
   - model_name: iais-qwen-122b
     litellm_params:
       model: openai/Qwen3.5-122B-A10B
       api_base: os.environ/IAIS_BASE_URL
-      api_key: "unused"
-      extra_headers: {"Authorization": "os.environ/IAIS_AUTH_HEADER"}
-  - model_name: iais-gpt-oss-120b
+      api_key: os.environ/FHG_API_KEY
+  - model_name: iais-gpt-oss-20b
     litellm_params:
-      model: openai/gpt-oss-120b
+      model: openai/gpt-oss-20b
       api_base: os.environ/IAIS_BASE_URL
-      api_key: "unused"
-      extra_headers: {"Authorization": "os.environ/IAIS_AUTH_HEADER"}
+      api_key: os.environ/FHG_API_KEY
   - model_name: ollama-mistral
     litellm_params:
       model: openai/mistral:7b-instruct

@@ -47,14 +47,12 @@ agent_loaded() { launchctl list 2>/dev/null | awk -v l="$1" '$3==l{f=1} END{exit
 [[ "$OSTYPE" == darwin* ]] || die "macOS only (uses launchctl)."
 command -v pipx >/dev/null || die "pipx missing — 'brew install pipx' first."
 [[ -f "$KEY_FILE" ]] || die "key file $KEY_FILE not found. Create it with:
-    printf 'FHG_USERNAME=%s\\nFHG_PASSWORD=%s\\nIAIS_BASE_URL=%s\\n' 'YOUR_USER' 'YOUR_PASS' 'https://genai.iais.fraunhofer.de/api/v2' > $KEY_FILE"
+    printf 'FHG_API_KEY=%s\\nIAIS_BASE_URL=%s\\n' 'YOUR_API_KEY' 'https://genai.iais.fraunhofer.de/api/v2' > $KEY_FILE"
 
-# Pull IAIS creds out of the key file for preflight probes (Basic auth).
+# Pull the IAIS API key out of the key file for preflight probes.
 set -a; . "$KEY_FILE"; set +a
-[[ -n "${FHG_USERNAME:-}" ]] || die "FHG_USERNAME missing in $KEY_FILE"
-[[ -n "${FHG_PASSWORD:-}" ]] || die "FHG_PASSWORD missing in $KEY_FILE"
+[[ -n "${FHG_API_KEY:-}" ]] || die "FHG_API_KEY missing in $KEY_FILE"
 IAIS_BASE_URL="$(printf '%s' "${IAIS_BASE_URL:-https://genai.iais.fraunhofer.de/api/v2}" | tr -d '[:space:]')"
-IAIS_AUTH="Basic $(printf '%s:%s' "$FHG_USERNAME" "$FHG_PASSWORD" | base64 | tr -d '\n')"
 
 # --- 1. litellm[proxy] via pipx (isolated) ----------------------------------
 if "$LITELLM_BIN" --version >/dev/null 2>&1; then
@@ -76,7 +74,7 @@ fi
 
 # --- 2. preflight: IAIS reachable? Ollama up? -------------------------------
 say "Probing IAIS GenAI ($IAIS_BASE_URL)..."
-if curl -fsS -m 20 "$IAIS_BASE_URL/models" -H "Authorization: $IAIS_AUTH" >/dev/null 2>&1; then
+if curl -fsS -m 20 "$IAIS_BASE_URL/models" -H "Authorization: Bearer $FHG_API_KEY" >/dev/null 2>&1; then
     echo "  • IAIS GenAI: reachable"
 else
     warn "IAIS not reachable (VPN down?). Router still installs; it will serve"
@@ -143,9 +141,9 @@ if [[ -f "$ENV_FILE" ]]; then
 import sys, re
 path = sys.argv[1]
 # Only the LLM endpoint changes; embeddings stay local (no reindex). The router
-# primary is now a NON-reasoning model (IAIS Mistral-Small), so there is no
-# hidden-reasoning token drain; 8192 is ample headroom for batch graph-extraction
-# JSON. Active (uncommented) lines are rewritten in place; any missing key is
+# primary is IAIS gpt-oss-20b; 8192 is ample headroom for batch graph-extraction
+# JSON even with its reasoning-token overhead. Active (uncommented) lines are
+# rewritten in place; any missing key is
 # appended under a managed marker. Commented lines (e.g. a parked cloud key) are
 # left untouched.
 updates = {
@@ -188,6 +186,6 @@ agent_loaded "$ROUTER_LABEL"            && echo "  • Router agent: loaded"  ||
 curl -fsS -m 2 "$ROUTER_URL/health/liveliness" >/dev/null 2>&1 \
                                         && echo "  • Router $ROUTER_URL: healthy" || echo "  • Router $ROUTER_URL: DOWN"
 echo
-echo "agentmemory now: LLM -> IAIS Mistral-Small (fallback: Ollama mistral), embeddings -> local."
+echo "agentmemory now: LLM -> IAIS gpt-oss-20b (fallback: Ollama mistral), embeddings -> local."
 echo "Logs: $LOG_DIR/litellm-router.stderr.log"
 echo "Manual switch of primary model: edit config/litellm/config.yaml (memory-default), re-run this script."
