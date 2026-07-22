@@ -9,10 +9,18 @@
 #   - klartext battle-tested this endpoint; treated as always-up with net+creds.
 #   - As of 2026-07, EVERY chat model IAIS hosts reports thinking_model:true
 #     (Mistral-Small, the old non-reasoning pick, was retired from the catalog).
-#     gpt-oss-20b was probed directly and returns real `content` well inside
-#     max_tokens (43 completion tokens for a trivial prompt) - the empty-content
-#     failure mode the old MiniMax-M2.5 hit doesn't reproduce here, so it's fine
-#     despite being a reasoning model on paper.
+#
+# Why Qwen3.5-122B-A10B for memory-default (was gpt-oss-20b, 2026-07-22):
+#   gpt-oss-20b as deployed here has only a ~16-18k effective context window
+#   (probed: a ~20k-token prompt already 400s with `max_tokens must be at least
+#   1, got -1466`). agentmemory's mem::summarize / mem::graph-extract build
+#   prompts of 22k-90k tokens on real Claude Code sessions (~275-450 tok/obs),
+#   so they overflowed constantly -> the 400 tripped the fallback -> circuit
+#   breaker -> pegged GPU. Shrinking SUMMARIZE_CHUNK_SIZE (400->200->50) only
+#   delayed it and can't touch the graph path at all. Qwen3.5-122B-A10B was
+#   probed 2026-07-22 to a clean 131,072-token (128k) ceiling and answers fast
+#   (0.8s trivial, 3.9s @ 22k in, 4.6s @ 45k in) - 4x headroom over the worst
+#   observed prompt, so overflow stops being possible for normal sessions.
 #
 # Auth: IAIS switched from HTTP Basic to a bearer API key (2026-07). LiteLLM
 # sends `Authorization: Bearer <api_key>` by default, so api_key: os.environ/FHG_API_KEY
@@ -26,11 +34,11 @@ model_list:
   # ---- what agentmemory points at (OPENAI_MODEL=memory-default) --------------
   - model_name: memory-default
     litellm_params:
-      model: openai/gpt-oss-20b                            # IAIS, ~40 completion tokens for trivial prompts
+      model: openai/Qwen3.5-122B-A10B                      # IAIS, 128k context (probed 2026-07-22); replaces gpt-oss-20b's ~16-18k ceiling
       api_base: os.environ/IAIS_BASE_URL
       api_key: os.environ/FHG_API_KEY
       max_tokens: 8192                                     # ample for batch JSON
-      timeout: 30                                          # fails fast off-VPN instead of eating the 120s ceiling
+      timeout: 30                                          # qwen answers 4-5s even @ 45k in; 30s is 6x margin
   - model_name: memory-fallback
     litellm_params:
       model: openai/mistral:7b-instruct            # local Ollama, used only when
