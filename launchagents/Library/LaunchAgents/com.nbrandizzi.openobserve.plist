@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.nbrandizzi.openobserve</string>
+
+    <!-- OpenObserve OTLP store on 127.0.0.1:5080. Claude Code exports all OTEL
+         signals (metrics + events + traces) straight here; see the OTEL_* block
+         in ~/.config/claude/settings.json. Root creds are sourced from
+         ~/.openobserve-creds by the wrapper, so no secret lives in this plist. -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>/Users/nbrandizzi/dotfiles/scripts/openobserve-run.sh</string>
+    </array>
+
+    <!-- Long-running local service, like the litellm router: start at login and
+         keep it alive. -->
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>/Users/nbrandizzi/Library/Logs/openobserve/openobserve.stdout.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/nbrandizzi/Library/Logs/openobserve/openobserve.stderr.log</string>
+
+    <!-- launchd's PATH is minimal; the wrapper needs `docker` (/usr/local/bin on
+         Intel, /opt/homebrew/bin on Apple silicon). HOME is required for the
+         wrapper's ~ expansion. -->
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin</string>
+        <key>HOME</key>
+        <string>/Users/nbrandizzi</string>
+    </dict>
+</dict>
+</plist>

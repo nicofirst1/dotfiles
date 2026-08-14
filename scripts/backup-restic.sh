@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 #
 # backup-restic.sh  —  encrypted, deduplicated backup of the HEAVY agent data
-#                      (Claude Code + Hermes sessions/transcripts/state) to Drive.
+#                      (Claude Code + Hermes sessions/transcripts/state +
+#                      OpenObserve OTEL telemetry) to Drive.
 #
 # Companion to snapshot-memories.sh: memories (~330 KB) go to git; this handles
 # the ~1.4 GB of session transcripts and live DB state that must NOT go in git
@@ -35,6 +36,7 @@ export RCLONE_DRIVE_PACER_BURST="${RCLONE_DRIVE_PACER_BURST:-1}"
 CLAUDE_DIR="${CLAUDE_CONFIG_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/claude}"
 HERMES_HOME="${HERMES_HOME:-${XDG_CONFIG_HOME:-$HOME/.config}/hermes}"
 AGENTMEMORY="${AGENTMEMORY_HOME:-$HOME/.agentmemory}"
+OPENOBSERVE_DIR="${OO_DATA_DIR:-$HOME/.local/share/openobserve}"
 STAGING="$HOME/.config/restic/staging"
 
 die() { printf 'backup-restic: %s\n' "$*" >&2; exit 1; }
@@ -53,6 +55,15 @@ if command -v sqlite3 >/dev/null 2>&1; then
         sqlite3 "$db" ".backup '$STAGING/hermes/$(basename "$db")'" 2>/dev/null \
             || cp "$db" "$STAGING/hermes/$(basename "$db")"   # fallback: best-effort copy
     done
+    # OpenObserve's metadata index (which streams/parquet files exist, schemas,
+    # users) is a live WAL-mode sqlite; a torn read there orphans the parquet
+    # data, so stage a consistent .backup and exclude the live file below.
+    OO_META="$OPENOBSERVE_DIR/db/metadata.sqlite"
+    if [[ -e "$OO_META" ]]; then
+        mkdir -p "$STAGING/openobserve/db"
+        sqlite3 "$OO_META" ".backup '$STAGING/openobserve/db/metadata.sqlite'" 2>/dev/null \
+            || cp "$OO_META" "$STAGING/openobserve/db/metadata.sqlite"
+    fi
 fi
 
 # 2. The backup. Include the precious trees + staged DBs; exclude everything
@@ -63,7 +74,11 @@ fi
 #   state_store is a derived index rebuildable from the streams. If a guaranteed-
 #   consistent snapshot is ever needed, pause com.nbrandizzi.agentmemory (or
 #   `iii trigger` a checkpoint) around this call.
-restic backup "$CLAUDE_DIR" "$HERMES_HOME" "$AGENTMEMORY" "$STAGING" \
+# ponytail: OpenObserve stream data (parquet) is immutable once flushed, so it
+#   dedups near-free across days; the wal/ tail is backed up live and OpenObserve
+#   replays it on restore. mmdb (75 MB GeoIP) and cache/tmp are re-downloadable/
+#   regenerable, so they're excluded. The metadata sqlite goes in via staging.
+restic backup "$CLAUDE_DIR" "$HERMES_HOME" "$AGENTMEMORY" "$OPENOBSERVE_DIR" "$STAGING" \
     --tag claude-hermes \
     --pack-size 128 \
     -o rclone.connections=2 \
@@ -91,6 +106,12 @@ restic backup "$CLAUDE_DIR" "$HERMES_HOME" "$AGENTMEMORY" "$STAGING" \
     --exclude "$AGENTMEMORY/*.pid" \
     --exclude "$AGENTMEMORY/.env.bak.*" \
     --exclude "$AGENTMEMORY/.env.pre-litellm.*" \
+    --exclude "$OPENOBSERVE_DIR/cache" \
+    --exclude "$OPENOBSERVE_DIR/tmp" \
+    --exclude "$OPENOBSERVE_DIR/mmdb" \
+    --exclude "$OPENOBSERVE_DIR/db/metadata.sqlite" \
+    --exclude "$OPENOBSERVE_DIR/db/metadata.sqlite-wal" \
+    --exclude "$OPENOBSERVE_DIR/db/metadata.sqlite-shm" \
     --exclude "**/.DS_Store" \
     --exclude "**/*.lock"
 
