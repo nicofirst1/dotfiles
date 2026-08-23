@@ -26,7 +26,9 @@ MAX_AGE_H="${BACKUP_MAX_AGE_HOURS:-36}"
 problems=0
 
 say()  { printf '%s\n' "$*"; }
-bad()  { printf 'PROBLEM: %s\n' "$*" >&2; problems=$((problems+1)); }
+first_problem=""
+bad()  { printf 'PROBLEM: %s\n' "$*" >&2; problems=$((problems+1))
+         [[ -z "$first_problem" ]] && first_problem="$*"; return 0; }
 
 say "== backup health check $(date -Is) =="
 
@@ -82,6 +84,29 @@ check_repo drive "${RESTIC_REPO_DRIVE:-rclone:gdrive:}"
 # 4. The repo password must exist off this machine, or both repos are ornaments.
 #    We cannot verify escrow; we can at least refuse to let it be forgotten.
 [[ -s "$RESTIC_PASSWORD_FILE" ]] || bad "restic password file missing at $RESTIC_PASSWORD_FILE"
+
+# Report to Uptime Kuma, if a push monitor is configured.
+#
+# A push monitor is the right shape here, not an HTTP check. An HTTP monitor
+# against Backrest's port only proves the web server is up -- which it will be
+# on the night every database dump fails and the plan still reports SUCCESS.
+# This pushes the answer to "is there a recent, complete, restorable backup",
+# and Kuma alerts on the ABSENCE of a push, so a healthcheck that never runs at
+# all is itself the alarm. An HTTP monitor cannot detect that.
+#
+# Set BACKUP_KUMA_PUSH_URL in ~/.config/restic/env to the push URL Kuma gives
+# you (the .../api/push/<token> form, without any query string).
+if [[ -n "${BACKUP_KUMA_PUSH_URL:-}" ]]; then
+  if (( problems )); then
+    kuma_status="down"; kuma_msg="$problems problem(s): $(printf '%s' "${first_problem:-see journal}")"
+  else
+    kuma_status="up";   kuma_msg="ok"
+  fi
+  curl -fsS -m 10 -G "$BACKUP_KUMA_PUSH_URL" \
+       --data-urlencode "status=$kuma_status" \
+       --data-urlencode "msg=$kuma_msg" >/dev/null 2>&1 \
+    || say "  (note: could not reach Kuma at $BACKUP_KUMA_PUSH_URL)"
+fi
 
 if (( problems )); then
   say "== $problems problem(s) — backups are NOT healthy =="
