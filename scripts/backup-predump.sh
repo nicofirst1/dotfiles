@@ -38,6 +38,84 @@ warn() { log "WARN: $*"; rc=1; }
 mountpoint -q /mnt/data || { log "FATAL: /mnt/data is not mounted"; exit 2; }
 mkdir -p "$STAGING"/{sqlite,redis,qdrant,mysql} || { log "FATAL: cannot write $STAGING"; exit 2; }
 
+# THE single source of truth for which SQLite databases exist. Discovered, not
+# hand-listed: a hand-listed set is how prbot/state.db (54 MB) ended up excluded
+# from restic but never dumped, and how profiles/*/cron/executions.db ended up
+# being read live. backup-ublion.sh and Backrest both build their excludes from
+# this function, so an exclude without a dump is impossible.
+#
+# SQLITE_ROOTS must stay in step with TARGETS in backup-ublion.sh: a database
+# under a backed-up tree that this find never reaches is read LIVE by restic,
+# which is the whole failure class this pair exists to close. The prunes mirror
+# that script's excludes, so we never dump something that is not kept.
+SQLITE_ROOTS=(
+  /home/nico/.hermes
+  /home/nico/.frigate/config
+  /home/nico/.actual
+  /home/nico/repos
+  /home/nico/memory-os
+  /home/nico/.config/claude
+  /home/nico/agent
+  /home/nico/skills
+  /home/nico/data
+  /home/nico/caddy-setup
+  /home/nico/searxng
+)
+sqlite_sources() {
+  find "${SQLITE_ROOTS[@]}" \
+    \( -path '/home/nico/.hermes/hermes-agent*' \
+       -o -path '/home/nico/.hermes/tmp' \
+       -o -path '/home/nico/.hermes/cache' \
+       -o -path '/home/nico/.hermes/venvs' \
+       -o -path '/home/nico/.hermes/node' \
+       -o -path '/home/nico/.hermes/lsp' \
+       -o -path '/home/nico/.hermes/bin' \
+       -o -path '/home/nico/.hermes/sandboxes' \
+       -o -path '*/profiles/*/home/.cache' \
+       -o -path '*/profiles/*/cache' \
+       -o -path '*/profiles/*/lsp' \
+       -o -path '*/profiles/*/bin' \
+       -o -path '/home/nico/repos/personal/firefly-iii/db' \
+       -o -name node_modules -o -name .venv -o -name venv -o -name .git \
+       -o -name __pycache__ -o -name .mypy_cache -o -name .pytest_cache \
+       -o -name .ruff_cache -o -name .next \
+    \) -prune -o \
+    -type f \( -name '*.db' -o -name '*.sqlite' -o -name '*.sqlite3' \) -print 2>/dev/null \
+  | sort -u
+}
+
+# Staging name derived from the full relative path, plus a hash of that path.
+# The readable part cannot be unique on its own: replacing "/" with "-" makes
+# profiles/prbot/cron/executions.db and profiles/prbot-cron/executions.db the
+# same name, and hermes profile directory names are user-chosen. A collision is
+# silent and total -- last write wins, BOTH get manifest-claimed so no zombie or
+# stale warning fires, and one database is simply absent from every backup with
+# the run still green. The suffix makes that impossible.
+staging_name() {
+  local rel="${1#/home/nico/}"
+  rel="${rel#.}"
+  printf '%s.%s' "${rel//\//-}" "$(printf '%s' "$1" | sha1sum | cut -c1-8)"
+}
+
+# A pure read, used by tooling while a real run may be in flight -- answer it
+# before taking the dump lock so it never blocks behind a running backup.
+if [[ "${1:-}" == "--list-sources" ]]; then
+  sqlite_sources
+  exit 0
+fi
+
+# Serialize. Two callers can legitimately reach this at once -- Backrest runs it
+# as a snapshot-start hook for BOTH plans, and backup-ublion.sh runs it too --
+# and staging has no other locking, so concurrent runs race on the same .tmp
+# files and truncate each other's manifest. (Observed: two overlapping runs left
+# a 0-byte .manifest.new that neither finished.) Wait rather than fail: the
+# second caller wants a fresh dump, and the first is producing exactly that.
+exec 9>"$STAGING/.lock"
+if ! flock -w "${BACKUP_LOCK_WAIT:-1800}" 9; then
+  log "FATAL: another backup-predump.sh held the lock for >${BACKUP_LOCK_WAIT:-1800}s"
+  exit 2
+fi
+
 # Every dump that succeeds records itself here. Anything left in STAGING that is
 # not in the manifest is a zombie -- a store that was removed or renamed, whose
 # last dump would otherwise be backed up as current forever.
@@ -80,57 +158,31 @@ dump_sqlite() {
   fi
   local ic; ic=$(sqlite3 "$tmp" "PRAGMA integrity_check;" 2>&1 | head -1)
   if [[ "$ic" != "ok" ]]; then
-    mv -f "$tmp" "$dst.corrupt"
-    warn "sqlite: integrity_check on $name -> $ic (kept as $name.corrupt, previous $name intact)"
+    # Park it in attic/, which the sweep skips. Left beside the dumps it would
+    # be an unclaimed file, so EVERY later run would warn ZOMBIE and exit 1 --
+    # one transient corruption permanently poisoning the exit code, which is
+    # also how a real failure stops being distinguishable from noise.
+    mkdir -p "$STAGING/attic"
+    mv -f "$tmp" "$STAGING/attic/$name.corrupt.$(date +%Y%m%d%H%M%S)"
+    warn "sqlite: integrity_check on $name -> $ic (bad dump parked in attic/, previous $name intact)"
     [[ -f "$dst" ]] && keep "sqlite/$name"
+    return
+  fi
+  # A 0-byte or truncated source is a *legal empty* SQLite database: .backup
+  # exits 0 and yields a valid ~4 KB file that passes both the -s check and
+  # integrity_check. Without this guard, one crash-truncated source replaces a
+  # good 477 MB dump with a 4 KB empty one and logs "ok".
+  if [[ -f "$dst" ]] && (( $(stat -c%s "$tmp") * 4 < $(stat -c%s "$dst") )); then
+    mkdir -p "$STAGING/attic"
+    mv -f "$tmp" "$STAGING/attic/$name.shrunk.$(date +%Y%m%d%H%M%S)"
+    warn "sqlite: $name shrank >4x vs the previous dump — refusing to install it"
+    keep "sqlite/$name"
     return
   fi
   mv -f "$tmp" "$dst" || { warn "sqlite: could not install $name"; return; }
   keep "sqlite/$name"
   log "sqlite: $name ($(stat -c%s "$dst") bytes, ok)"
 }
-
-# THE single source of truth for which SQLite databases exist. Discovered, not
-# hand-listed: a hand-listed set is how prbot/state.db (54 MB) ended up excluded
-# from restic but never dumped, and how profiles/*/cron/executions.db ended up
-# being read live. backup-ublion.sh builds its excludes from this same function
-# (`--list-sources`), so an exclude without a dump is now impossible.
-#
-# The roots are exactly the trees backup-ublion.sh backs up; the prunes are the
-# subtrees it already excludes, so we never dump something that is not kept.
-sqlite_sources() {
-  find \
-      /home/nico/.hermes \
-      /home/nico/.frigate/config \
-      /home/nico/.actual \
-      /home/nico/repos/personal/actual-budget/data \
-      /home/nico/memory-os \
-    \( -path '/home/nico/.hermes/hermes-agent*' \
-       -o -path '/home/nico/.hermes/tmp' \
-       -o -path '/home/nico/.hermes/cache' \
-       -o -path '/home/nico/.hermes/venvs' \
-       -o -path '/home/nico/.hermes/node' \
-       -o -path '/home/nico/.hermes/sandboxes' \
-       -o -path '/home/nico/.hermes/backups' \
-       -o -path '*/profiles/*/cache' \
-       -o -name node_modules -o -name .venv -o -name .git \
-    \) -prune -o \
-    -type f \( -name '*.db' -o -name '*.sqlite' -o -name '*.sqlite3' \) -print 2>/dev/null \
-  | sort
-}
-
-# Staging name derived from the full relative path, so two databases with the
-# same basename in different directories cannot overwrite each other.
-staging_name() {
-  local rel="${1#/home/nico/}"
-  rel="${rel#.}"
-  printf '%s' "${rel//\//-}"
-}
-
-if [[ "${1:-}" == "--list-sources" ]]; then
-  sqlite_sources
-  exit 0
-fi
 
 # Write the live-DB exclude list where restic can consume it directly. Backrest
 # runs restic itself with a STATIC plan config, so it cannot call --list-sources
@@ -156,10 +208,16 @@ fi
 # empty reply compares "not equal" to the previous value and would otherwise be
 # read as "the save completed", copying the PREVIOUS rdb and logging success.
 if [[ -r "$MEMOS_ENV" ]]; then
-  REDIS_PASSWORD=$(grep -m1 '^REDIS_PASSWORD=' "$MEMOS_ENV" | cut -d= -f2- | tr -d '"'"'")
-  # Go through the container, so the instance we flush is the instance we copy;
-  # and via env, so the password never appears in the host process table.
-  rcli() { docker exec -e REDISCLI_AUTH="$REDIS_PASSWORD" -i docker-redis-1 redis-cli "$@" 2>/dev/null; }
+  # Read the password INSIDE the container, from the env it already has. Passing
+  # it as `docker exec -e REDISCLI_AUTH=...` puts the value in docker's own argv,
+  # which is world-readable in `ps` for the life of the call -- the previous
+  # version of this line claimed the opposite and was simply wrong.
+  # Going through the container also means the instance we flush is the instance
+  # we copy, rather than trusting whoever owns host port 6379.
+  rcli() {
+    docker exec -i docker-redis-1 sh -c \
+      'REDISCLI_AUTH="$REDIS_PASSWORD" exec redis-cli "$@"' _ "$@" 2>/dev/null
+  }
   lastsave() { local v; v=$(rcli LASTSAVE); [[ "$v" =~ ^[0-9]+$ ]] || return 1; printf '%s' "$v"; }
 
   if [[ "$(rcli PING)" == "PONG" ]]; then
@@ -251,11 +309,12 @@ fi
 # --- staleness + zombie sweep ----------------------------------------------
 # Anything in STAGING that no dump claimed is a store that was removed or
 # renamed; its last dump would be backed up as current forever, silently.
-mv -f "$MANIFEST_NEW" "$STAGING/.manifest"
+mv -f "$MANIFEST_NEW" "$STAGING/.manifest" \
+  || warn "staging: could not install manifest (sweep below compares stale data)"
 keep() { :; }
 while IFS= read -r f; do
   rel="${f#"$STAGING"/}"
-  case "$rel" in .manifest*|.restic-excludes*|attic/*) continue;; esac
+  case "$rel" in .manifest*|.restic-excludes*|.lock|attic/*) continue;; esac
   if ! grep -qxF "$rel" "$STAGING/.manifest"; then
     warn "staging: ZOMBIE $rel — no dump claimed it this run (store removed or renamed?)"
   elif [[ -n "$(find "$f" -mmin "+$((STALE_HOURS*60))" -print -quit)" ]]; then

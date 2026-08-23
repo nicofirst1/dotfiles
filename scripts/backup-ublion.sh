@@ -150,10 +150,15 @@ run_repo() {
   fi
 
   # Dedup makes old snapshots nearly free, so keep generously but bounded.
+  # A failing prune used to only echo. Retention then silently stops applying --
+  # and a prune killed mid-flight can leave an exclusive lock that blocks the
+  # next run -- while this run still reported success. Surface it.
   say "$name: forget/prune"
-  RESTIC_REPOSITORY="$repo" restic forget --tag "$TAG" \
-      --keep-daily 14 --keep-weekly 8 --keep-monthly 24 --prune >/dev/null \
-      || echo "backup-ublion: $name prune failed" >&2
+  if ! RESTIC_REPOSITORY="$repo" restic forget --tag "$TAG" \
+      --keep-daily 14 --keep-weekly 8 --keep-monthly 24 --prune >/dev/null; then
+    echo "backup-ublion: $name forget/prune FAILED — retention not applied" >&2
+    rc=1
+  fi
   RESTIC_REPOSITORY="$repo" restic snapshots --tag "$TAG" --latest 1
   return $rc
 }
