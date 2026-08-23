@@ -79,6 +79,10 @@ TARGETS=(
   "$HOME/.ssh"
   "$HOME/agent" "$HOME/skills" "$HOME/data"
   "$HOME/caddy-setup" "$HOME/searxng"
+  # The LIVE reverse-proxy config. ~/caddy-setup holds an older draft missing
+  # every vhost, and is not a git repo -- so without this, /etc/caddy/Caddyfile
+  # is the single unbacked-up copy of how every service is reached.
+  "/etc/caddy"
 )
 for f in "$HOME/.secrets.env" "$HOME/.gitconfig" "$HOME/.zshrc" "$HOME/.bashrc"; do
   [[ -e "$f" ]] && TARGETS+=("$f")
@@ -120,6 +124,10 @@ EXCLUDES=(
   # NB: no "**/*.lock" here. It looks regenerable but is not -- uv.lock/yarn.lock
   # pin exact versions, and re-resolving yields different ones.
   --exclude "**/*.pid"
+  # Root-only and holds the deSEC DNS-01 token. It cannot be read unprivileged,
+  # so including it would only produce a nightly rc=3. That token needs escrowing
+  # by hand, the same as the restic repo password.
+  --exclude "/etc/caddy/caddy.env"
 )
 
 # Exclude every live database that predump stages, generated from predump's own
