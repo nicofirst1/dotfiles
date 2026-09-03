@@ -36,7 +36,7 @@ log()  { printf '%s %s\n' "$(date -Is)" "$*"; }
 warn() { log "WARN: $*"; rc=1; }
 
 mountpoint -q /mnt/data || { log "FATAL: /mnt/data is not mounted"; exit 2; }
-mkdir -p "$STAGING"/{sqlite,redis,qdrant,mysql} || { log "FATAL: cannot write $STAGING"; exit 2; }
+mkdir -p "$STAGING"/{sqlite,redis,qdrant,mysql,mosquitto} || { log "FATAL: cannot write $STAGING"; exit 2; }
 
 # THE single source of truth for which SQLite databases exist. Discovered, not
 # hand-listed: a hand-listed set is how prbot/state.db (54 MB) ended up excluded
@@ -51,15 +51,17 @@ mkdir -p "$STAGING"/{sqlite,redis,qdrant,mysql} || { log "FATAL: cannot write $S
 SQLITE_ROOTS=(
   /home/nico/.hermes
   /home/nico/.frigate/config
-  /home/nico/.actual
   /home/nico/repos
   /home/nico/memory-os
   /home/nico/.config/claude
+  /home/nico/.local/share/backrest
+  /home/nico/uptime-kuma
   /home/nico/agent
   /home/nico/skills
   /home/nico/data
   /home/nico/caddy-setup
   /home/nico/searxng
+  /home/nico/grafana
 )
 sqlite_sources() {
   find "${SQLITE_ROOTS[@]}" \
@@ -76,6 +78,7 @@ sqlite_sources() {
        -o -path '*/profiles/*/lsp' \
        -o -path '*/profiles/*/bin' \
        -o -path '/home/nico/repos/personal/firefly-iii/db' \
+       -o -path '/home/nico/repos/personal/actual-budget' \
        -o -name node_modules -o -name .venv -o -name venv -o -name .git \
        -o -name __pycache__ -o -name .mypy_cache -o -name .pytest_cache \
        -o -name .ruff_cache -o -name .next \
@@ -195,6 +198,9 @@ while IFS= read -r src; do
   printf '%s\n%s-wal\n%s-shm\n%s-journal\n' "$src" "$src" "$src" "$src" >> "$EXCLUDE_FILE.tmp"
   dump_sqlite "$src" "$(staging_name "$src")"
 done < <(sqlite_sources)
+printf '%s\n%s\n' \
+  '/home/nico/mosquitto/config/passwd' \
+  '/home/nico/mosquitto/data/mosquitto.db' >> "$EXCLUDE_FILE.tmp"
 if [[ -s "$EXCLUDE_FILE.tmp" ]]; then
   mv -f "$EXCLUDE_FILE.tmp" "$EXCLUDE_FILE"
 else
@@ -304,6 +310,44 @@ if docker inspect -f '{{.State.Running}}' firefly-iii-db 2>/dev/null | grep -q t
 else
   warn "mysql: firefly-iii-db not running"
   [[ -f "$STAGING/mysql/firefly.sql.gz" ]] && keep "mysql/firefly.sql.gz"
+fi
+
+# --- Mosquitto --------------------------------------------------------------
+# The broker's live passwd and persistence DB are intentionally owned by the
+# container user (uid 1883) with mode 0600. Do not make them host-readable just
+# so restic can copy them. Stage them through Docker instead, then exclude the
+# live files via .restic-excludes above.
+if docker inspect -f '{{.State.Running}}' mosquitto 2>/dev/null | grep -q true; then
+  if docker kill --signal=SIGUSR1 mosquitto >/dev/null 2>&1; then
+    # Give Mosquitto a brief moment to write the persistence DB after SIGUSR1.
+    sleep 1
+  else
+    warn "mosquitto: SIGUSR1 persistence flush failed; copying current on-disk DB"
+  fi
+
+  mosq_copy() {
+    local src="$1" rel="$2"
+    local dst="$STAGING/mosquitto/$rel"
+    local tmp="$dst.tmp"
+    rm -f "$tmp"
+    if docker cp "mosquitto:$src" "$tmp" 2>/dev/null && [[ -s "$tmp" ]]; then
+      chmod 600 "$tmp" 2>/dev/null || true
+      touch "$tmp" 2>/dev/null || true
+      mv -f "$tmp" "$dst"
+      keep "mosquitto/$rel"
+      log "mosquitto: $rel ($(stat -c%s "$dst") bytes)"
+    else
+      rm -f "$tmp"
+      warn "mosquitto: docker cp failed for $src (keeping previous $rel)"
+      [[ -f "$dst" ]] && keep "mosquitto/$rel"
+    fi
+  }
+  mosq_copy /mosquitto/config/passwd passwd
+  mosq_copy /mosquitto/data/mosquitto.db mosquitto.db
+else
+  warn "mosquitto: container not running"
+  [[ -f "$STAGING/mosquitto/passwd" ]] && keep "mosquitto/passwd"
+  [[ -f "$STAGING/mosquitto/mosquitto.db" ]] && keep "mosquitto/mosquitto.db"
 fi
 
 # --- staleness + zombie sweep ----------------------------------------------

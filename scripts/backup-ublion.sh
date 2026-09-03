@@ -73,16 +73,29 @@ TARGETS=(
   "$HOME/.frigate/config"
   "$HOME/repos"
   "$HOME/memory-os"
-  "$HOME/.actual"
   "$HOME/.config/claude"
   "$HOME/.config/rclone"
+  "$HOME/.config/backrest"
+  "$HOME/.config/restic"
+  "$HOME/.local/share/backrest"
+  "$HOME/uptime-kuma"
   "$HOME/.ssh"
   "$HOME/agent" "$HOME/skills" "$HOME/data"
   "$HOME/caddy-setup" "$HOME/searxng"
+  # MQTT broker: holds the password file and persistence DB. Without this the
+  # Frigate -> Home Assistant credentials are unrecoverable.
+  "$HOME/mosquitto"
   # The LIVE reverse-proxy config. ~/caddy-setup holds an older draft missing
   # every vhost, and is not a git repo -- so without this, /etc/caddy/Caddyfile
   # is the single unbacked-up copy of how every service is reached.
   "/etc/caddy"
+  # Grafana. Dashboards are provisioned from git (home_automation), but
+  # grafana/data/grafana.db holds everything that ISN'T in git: users, API
+  # keys, the datasource's encrypted secrets, annotations and alert rules.
+  # Runs as uid 1000 precisely so predump can read this DB -- see SQLITE_ROOTS
+  # in backup-predump.sh, which must list this path too or restic reads the
+  # live DB mid-write.
+  "$HOME/grafana"
 )
 for f in "$HOME/.secrets.env" "$HOME/.gitconfig" "$HOME/.zshrc" "$HOME/.bashrc"; do
   [[ -e "$f" ]] && TARGETS+=("$f")
@@ -115,9 +128,16 @@ EXCLUDES=(
   # unreadable here, and worthless anyway — the mariadb-dump in staging is the
   # restorable form. Excluding it is what keeps this run off restic's rc=3.
   --exclude "$HOME/repos/personal/firefly-iii/db"
+  # Actual Budget was deliberately removed from scope; the leftover repo/data
+  # should not be preserved through backups.
+  --exclude "$HOME/repos/personal/actual-budget"
   # Regenerable build/dep trees (~6 GB of .venv alone).
   --exclude "**/.venv" --exclude "**/venv" --exclude "**/node_modules"
   --exclude "**/__pycache__" --exclude "**/*.pyc"
+  # Credential-bearing pre-edit copies: Backrest writes config.json.bak.<stamp>
+  # on every SetConfig (no opt-out) and it holds the restic password in
+  # cleartext. Keep every such copy out of the snapshots.
+  --exclude "**/*.bak.*"
   --exclude "**/target/debug" --exclude "**/.next" --exclude "**/.pytest_cache"
   --exclude "**/.mypy_cache" --exclude "**/.ruff_cache"
   --exclude "**/.DS_Store" --exclude "**/*.sock"
