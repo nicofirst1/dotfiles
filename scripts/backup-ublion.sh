@@ -80,7 +80,7 @@ TARGETS=(
   "$HOME/.local/share/backrest"
   "$HOME/uptime-kuma"
   "$HOME/.ssh"
-  "$HOME/agent" "$HOME/skills" "$HOME/data"
+  "$HOME/data"
   "$HOME/caddy-setup" "$HOME/searxng"
   # MQTT broker: holds the password file and persistence DB. Without this the
   # Frigate -> Home Assistant credentials are unrecoverable.
@@ -97,6 +97,9 @@ TARGETS=(
   # live DB mid-write.
   "$HOME/grafana"
 )
+for d in "$HOME/agent" "$HOME/skills"; do
+  [[ -e "$d" ]] && TARGETS+=("$d")
+done
 for f in "$HOME/.secrets.env" "$HOME/.gitconfig" "$HOME/.zshrc" "$HOME/.bashrc"; do
   [[ -e "$f" ]] && TARGETS+=("$f")
 done

@@ -56,15 +56,20 @@ SQLITE_ROOTS=(
   /home/nico/.config/claude
   /home/nico/.local/share/backrest
   /home/nico/uptime-kuma
-  /home/nico/agent
-  /home/nico/skills
   /home/nico/data
   /home/nico/caddy-setup
   /home/nico/searxng
   /home/nico/grafana
 )
 sqlite_sources() {
-  find "${SQLITE_ROOTS[@]}" \
+  local roots=()
+  local root
+  for root in "${SQLITE_ROOTS[@]}"; do
+    [[ -e "$root" ]] && roots+=("$root")
+  done
+  (( ${#roots[@]} )) || return 0
+
+  find "${roots[@]}" \
     \( -path '/home/nico/.hermes/hermes-agent*' \
        -o -path '/home/nico/.hermes/tmp' \
        -o -path '/home/nico/.hermes/cache' \
