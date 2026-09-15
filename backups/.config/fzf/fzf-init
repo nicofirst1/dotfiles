@@ -3,6 +3,10 @@
 
 source $XDG_CONFIG_HOME/fzf/fzf-fn
 
-eval "$(fzf --zsh)"
+# `command` bypasses the fzf=fzf-tmux alias: under herdr, TMUX is set even
+# when herdr's tmux server is dead, and evaluating `fzf-tmux --zsh` at shell
+# startup pokes the stale socket ("no server running on /tmp/tmux-1000/default")
+# and can hang non-interactive shells.
+eval "$(command fzf --zsh)"
 
 #source $XDG_CONFIG_HOME/fzf/fzf-git

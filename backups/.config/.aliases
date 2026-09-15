@@ -65,8 +65,11 @@ if command -v tmux &> /dev/null; then
     alias tat="tmux attach -t"
 fi
 
-# check if fzf-tmux is installed
-if command -v fzf-tmux &> /dev/null; then
+# Use the fzf-tmux popup only when already inside tmux. Unconditionally
+# aliasing fzf to fzf-tmux makes every non-tmux shell (ptyxis, scripts,
+# agent CLIs) poke the tmux default socket at startup — "no server running
+# on /tmp/tmux-1000/default" — and hang in non-tty contexts.
+if command -v fzf-tmux &> /dev/null && [[ -n "$TMUX" ]]; then
     alias fzf="fzf-tmux"
 fi
 
