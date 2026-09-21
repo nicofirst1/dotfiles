@@ -256,7 +256,12 @@ if [ "$FAILED" -eq 0 ]; then
   RESULT_MSG=HEALTHCHECK_PASS
 else
   RESULT_STATUS=down
-  RESULT_MSG="HEALTHCHECK_FAIL: $(printf '%s' "$FAILURES" | cut -c1-300)"
+  # A forwarded alert should already say where to look. Runbook paths are
+  # relative to the claude_memory repo.
+  RESULT_MSG="HEALTHCHECK_FAIL: $(printf '%s' "$FAILURES" | cut -c1-200)
+where: journalctl -u homelab-staging-healthcheck -n 80
+script: /usr/local/sbin/homelab-staging-healthcheck (+ /etc/homelab-staging-healthcheck.env)
+runbook: claude_memory/wiki/projects/self-hosting/homelab-healthcheck-blind-spots.md"
 fi
 
 # Dedicated backup-health push (Kuma monitor "Backup health"). Carries only
@@ -271,7 +276,15 @@ if [ -r /etc/homelab-staging-healthcheck.env ]; then
     else
       BACKUP_STATUS=down
     fi
-    BACKUP_MSG="local:${BACKUP_LOCAL_SUM:-not_run}; drive:${BACKUP_DRIVE_SUM:-not_run}"
+    if [ "$BACKUP_STATUS" = up ]; then
+      BACKUP_MSG="local:${BACKUP_LOCAL_SUM:-not_run}; drive:${BACKUP_DRIVE_SUM:-not_run}"
+    else
+      BACKUP_MSG="local:${BACKUP_LOCAL_SUM:-not_run}; drive:${BACKUP_DRIVE_SUM:-not_run}
+where: journalctl -u homelab-staging-healthcheck -n 80
+repos: /srv/restic (local) + rclone:gdrive: (offsite, encrypted)
+known: drive=repo_error is usually the WEEKLY rclone OAuth expiry -> rclone config reconnect gdrive: (headless: ssh -L 53682:127.0.0.1:53682)
+runbook: claude_memory/wiki/projects/self-hosting/restic-backrest-backup.md"
+    fi
     if curl -fsS --max-time 10 -G "${KUMA_PUSH_BACKUP_URL}" \
          --data-urlencode "status=${BACKUP_STATUS}" \
          --data-urlencode "msg=${BACKUP_MSG}" \

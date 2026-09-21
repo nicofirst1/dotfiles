@@ -17,12 +17,20 @@ fi
 
 mkdir -p "$LOG_DIR" "$HA_WAREHOUSE_DIR"
 
+# Appended to every failing push so a forwarded alert says where to look.
+PUSH_WHERE="where: tail -50 ${LOG_FILE}
+warehouse: ${HA_WAREHOUSE_DIR} (watermark .watermark.json)
+runbook: claude_memory/wiki/projects/smart-home/ha-sensor-data-retention-and-external-export.md"
+
 push_kuma() {
   local status="$1"
   local msg="$2"
   local ping="${3:-}"
   if [[ -n "${KUMA_PUSH_URL:-}" ]]; then
-    curl -fsS -m 10 -o /dev/null "${KUMA_PUSH_URL}?status=${status}&msg=${msg}&ping=${ping}" \
+    curl -fsS -m 10 -o /dev/null -G "${KUMA_PUSH_URL}" \
+      --data-urlencode "status=${status}" \
+      --data-urlencode "msg=${msg}" \
+      --data-urlencode "ping=${ping}" \
       || printf '%s WARN: kuma push failed status=%s msg=%s\n' "$(date -Is)" "$status" "$msg" >>"$LOG_FILE"
   fi
 }
@@ -30,7 +38,8 @@ push_kuma() {
 fail() {
   local msg="$1"
   printf '%s ERROR: %s\n' "$(date -Is)" "$msg" >>"$LOG_FILE"
-  push_kuma down "$msg" ""
+  push_kuma down "${msg}
+${PUSH_WHERE}" ""
   echo "$msg"
   exit 2
 }
@@ -61,7 +70,8 @@ set -e
 elapsed_ms=$(( ($(date +%s%N) - started_ns) / 1000000 ))
 printf '%s ha-export-homelab status=%s elapsed_ms=%s\n%s\n' "$(date -Is)" "$status" "$elapsed_ms" "$output" >>"$LOG_FILE"
 if [[ $status -ne 0 ]]; then
-  push_kuma down "ha-export failed status=${status}" "$elapsed_ms"
+  push_kuma down "ha-export failed status=${status}
+${PUSH_WHERE}" "$elapsed_ms"
   echo "$output"
   exit "$status"
 fi
