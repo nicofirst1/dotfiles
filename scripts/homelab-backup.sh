@@ -75,6 +75,7 @@ EXCLUDES=(
   --exclude /srv/data/grafana/grafana.db
   --exclude /srv/data/frigate/config/frigate.db
   --exclude /etc/caddy/caddy.env
+  --exclude /etc/sudoers.d
   --exclude /home/nico/.hermes/state.db
   --exclude /home/nico/.hermes/state.db-wal
   --exclude /home/nico/.hermes/state.db-shm

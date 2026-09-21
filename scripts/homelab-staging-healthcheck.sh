@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 set -u
 FAILED=0
+FAILURES=
 ok(){ printf 'OK %s\n' "$*"; }
 warn(){ printf 'WARN %s\n' "$*"; }
-fail(){ printf 'FAIL %s\n' "$*"; FAILED=1; }
+fail(){ printf 'FAIL %s\n' "$*"; FAILED=1; FAILURES="${FAILURES:+${FAILURES}; }$*"; }
 
 printf '== homelab staging healthcheck %s ==\n' "$(date -Is)"
 
@@ -175,17 +176,55 @@ fi
 export RESTIC_PASSWORD_FILE=/home/nico/.config/restic/homelab-local-password
 check_restic_tag_fresh() {
   local label="$1" repo="$2" tag2="$3" max_age="${4:-129600}"
-  local json latest ts now age
-  json=$(RESTIC_REPOSITORY="$repo" restic snapshots --json --tag homelab-system --tag "$tag2" 2>/dev/null || true)
-  latest=$(printf '%s' "$json" | python3 -c 'import json,sys; from datetime import datetime; d=json.load(sys.stdin) if sys.stdin.readable() else []; print(max([x.get("time","") for x in d], default=""))' 2>/dev/null || true)
-  if [ -z "$latest" ]; then fail "restic_${label}_homelab_system_snapshot_missing"; return; fi
+  local out err rc detail latest ts now age
+  CRTF_FAIL=0
+  CRTF_SUMMARY=""
+  err="$(mktemp)"
+  # </dev/null so a bad password file fails instead of blocking on a prompt;
+  # timeout so a wedged remote cannot hang the whole healthcheck.
+  out="$(RESTIC_REPOSITORY="$repo" timeout 120 restic snapshots --json --tag homelab-system --tag "$tag2" 2>"$err" </dev/null)"
+  rc=$?
+  detail="$(cat "$err" 2>/dev/null; printf '%s' "$out")"
+  rm -f "$err"
+  if [ "$rc" -ne 0 ] || printf '%s' "$out" | grep -q '"message_type":"exit_error"'; then
+    detail="$(printf '%s' "$detail" | python3 -c 'import json,sys
+raw = sys.stdin.read()
+msg = ""
+for line in raw.splitlines():
+    line = line.strip()
+    if line.startswith("{"):
+        try:
+            o = json.loads(line)
+        except Exception:
+            continue
+        if o.get("message_type") == "exit_error":
+            msg = o.get("message", "")
+            break
+print(" ".join((msg or raw).split())[:180])' 2>/dev/null)"
+    [ -n "$detail" ] || detail="restic exit ${rc}"
+    [ "$rc" -eq 124 ] && detail="timed out after 120s: ${detail}"
+    CRTF_FAIL=1; CRTF_SUMMARY="repo_error rc=${rc}"
+    fail "restic_${label}_repo_error rc=${rc} ${detail:-unknown}"
+    return
+  fi
+  latest="$(printf '%s' "$out" | python3 -c 'import json,sys
+try:
+    d = json.load(sys.stdin)
+except Exception:
+    d = []
+if not isinstance(d, list):
+    d = []
+print(max([x.get("time", "") for x in d], default=""))' 2>/dev/null || true)"
+  if [ -z "$latest" ]; then CRTF_FAIL=1; CRTF_SUMMARY="snapshot_missing"; fail "restic_${label}_homelab_system_snapshot_missing"; return; fi
   ts=$(date -d "$latest" +%s 2>/dev/null || echo 0)
   now=$(date +%s)
   age=$((now - ts))
-  if [ "$age" -le "$max_age" ]; then ok "restic_${label}_homelab_system_fresh_age=${age}s"; else fail "restic_${label}_homelab_system_stale_age=${age}s"; fi
+  if [ "$age" -le "$max_age" ]; then CRTF_FAIL=0; CRTF_SUMMARY="fresh_age=${age}s"; ok "restic_${label}_homelab_system_fresh_age=${age}s"; else CRTF_FAIL=1; CRTF_SUMMARY="stale_age=${age}s"; fail "restic_${label}_homelab_system_stale_age=${age}s"; fi
 }
 check_restic_tag_fresh local /srv/restic local 129600
+BACKUP_LOCAL_FAIL=$CRTF_FAIL; BACKUP_LOCAL_SUM=$CRTF_SUMMARY
 check_restic_tag_fresh drive rclone:gdrive: drive 129600
+BACKUP_DRIVE_FAIL=$CRTF_FAIL; BACKUP_DRIVE_SUM=$CRTF_SUMMARY
 
 # Backup snapshot recency by tag.
 export RESTIC_REPOSITORY=/srv/restic
@@ -195,23 +234,63 @@ for tag in homelab-grafana-stage homelab-mosquitto-stage homelab-frigate-stage h
 done
 
 # Predump scripts.
-for p in /usr/local/sbin/homelab-mosquitto-predump /usr/local/sbin/homelab-searxng-predump; do
+for p in /usr/local/sbin/homelab-mosquitto-predump /usr/local/sbin/homelab-searxng-predump /usr/local/sbin/homelab-sudoers-predump; do
   [ -x "$p" ] && ok "predump_present_${p##*/}" || fail "predump_missing_${p##*/}"
 done
+
+# Sudoers staging: /etc/sudoers.d is root-only, so backrest backs up staged copies.
+if [ -f /srv/backups/staging/sudoers/.staged ]; then
+  sud_age=$(( $(date +%s) - $(stat -c %Y /srv/backups/staging/sudoers/.staged 2>/dev/null || echo 0) ))
+  sud_n=$(find /srv/backups/staging/sudoers -maxdepth 1 -type f ! -name '.staged' 2>/dev/null | wc -l)
+  if [ "$sud_age" -le 172800 ] && [ "$sud_n" -gt 0 ]; then
+    ok "sudoers_staged_n=${sud_n}_age=${sud_age}s"
+  else
+    fail "sudoers_staged_stale_or_empty_n=${sud_n}_age=${sud_age}s"
+  fi
+else
+  fail 'sudoers_staged_missing'
+fi
 
 if [ "$FAILED" -eq 0 ]; then
   RESULT_STATUS=up
   RESULT_MSG=HEALTHCHECK_PASS
 else
   RESULT_STATUS=down
-  RESULT_MSG=HEALTHCHECK_FAIL
+  RESULT_MSG="HEALTHCHECK_FAIL: $(printf '%s' "$FAILURES" | cut -c1-300)"
+fi
+
+# Dedicated backup-health push (Kuma monitor "Backup health"). Carries only
+# restic repo reachability and snapshot ages, so it separates "repo
+# unreachable" from "snapshot stale" without the composite check's noise.
+if [ -r /etc/homelab-staging-healthcheck.env ]; then
+  # shellcheck disable=SC1091
+  . /etc/homelab-staging-healthcheck.env
+  if [ -n "${KUMA_PUSH_BACKUP_URL:-}" ]; then
+    if [ "${BACKUP_LOCAL_FAIL:-1}" -eq 0 ] && [ "${BACKUP_DRIVE_FAIL:-1}" -eq 0 ]; then
+      BACKUP_STATUS=up
+    else
+      BACKUP_STATUS=down
+    fi
+    BACKUP_MSG="local:${BACKUP_LOCAL_SUM:-not_run}; drive:${BACKUP_DRIVE_SUM:-not_run}"
+    if curl -fsS --max-time 10 -G "${KUMA_PUSH_BACKUP_URL}" \
+         --data-urlencode "status=${BACKUP_STATUS}" \
+         --data-urlencode "msg=${BACKUP_MSG}" \
+         --data-urlencode "ping=" >/dev/null 2>&1; then
+      ok "kuma_push_backup_${BACKUP_STATUS}"
+    else
+      warn "kuma_push_backup_failed"
+    fi
+  fi
 fi
 
 if [ -r /etc/homelab-staging-healthcheck.env ]; then
   # shellcheck disable=SC1091
   . /etc/homelab-staging-healthcheck.env
   if [ -n "${KUMA_PUSH_URL:-}" ]; then
-    if curl -fsS --max-time 10 "${KUMA_PUSH_URL}?status=${RESULT_STATUS}&msg=${RESULT_MSG}&ping=" >/dev/null 2>&1; then
+    if curl -fsS --max-time 10 -G "${KUMA_PUSH_URL}" \
+         --data-urlencode "status=${RESULT_STATUS}" \
+         --data-urlencode "msg=${RESULT_MSG}" \
+         --data-urlencode "ping=" >/dev/null 2>&1; then
       ok "kuma_push_${RESULT_STATUS}"
     else
       warn "kuma_push_failed"

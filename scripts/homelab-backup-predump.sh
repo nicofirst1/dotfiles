@@ -51,6 +51,13 @@ else
   warn 'searxng predump missing'
 fi
 
+# /etc/sudoers.d is root-only, so stage readable copies instead (see 51-nico-backup-sudoers).
+if [[ -x /usr/local/sbin/homelab-sudoers-predump ]]; then
+  sudo -n /usr/local/sbin/homelab-sudoers-predump || warn 'sudoers predump failed'
+else
+  warn 'sudoers predump missing'
+fi
+
 # /etc/ufw is root-only, so stage a readable dump instead of backing up the tree.
 mkdir -p "$STAGING/firewall"
 if sudo -n ufw status numbered > "$STAGING/firewall/ufw-status.txt" 2>/dev/null; then
