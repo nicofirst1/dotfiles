@@ -1,0 +1,11 @@
+# gitleaks fingerprints to ignore, one per line.
+#
+# 4b3e21f:.zshrc:163 -- false positive of the custom "generic-connection-string" rule in
+# .gitleaks.toml, which matches the SHAPE of a credentialed URL. That 2024 line is a
+# scrubbed placeholder (user, password, host and db name all replaced with REDACTED_*
+# tokens before it was ever committed), verified by reading the raw git blob. No real
+# credential was committed there. Everything else must still fail the scan.
+#
+# Note: do not paste a credentialed URL into this file, including in a comment -- the
+# rule matches comments too and gitleaks will flag its own ignore list.
+4b3e21fe4f72f800edd9ab6a84012459135717da:.zshrc:generic-connection-string:163

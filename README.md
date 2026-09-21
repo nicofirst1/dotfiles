@@ -27,6 +27,30 @@ This script performs the following actions:
 - Restores previous stow configurations if any.
 - Creates a `.machine.sh` file in your home directory for machine-specific configurations.
 
+## Secret scanning (pre-commit)
+
+This repository is **public**, so a gitleaks hook blocks commits containing secrets.
+
+- **Hook:** `.githooks/pre-commit` (tracked). `core.hooksPath` is per-clone git config, so each
+  machine opts in once:
+  ```bash
+  git config core.hooksPath .githooks
+  ```
+- **Requires** the `gitleaks` binary on `PATH`. Without it the hook prints a loud
+  `gitleaks NOT installed -- THIS COMMIT WAS NOT SCANNED` warning and *allows* the commit, so treat
+  that warning as a failure rather than as noise.
+- **Config:** `.gitleaks.toml` (gitleaks defaults plus a connection-string rule).
+- **Manual scans:**
+  ```bash
+  gitleaks git --redact -v --config .gitleaks.toml      # whole history
+  gitleaks dir --redact -v --config .gitleaks.toml .    # working tree
+  ```
+- **Alternative:** `.pre-commit-config.yaml` drives the same scanner through the `pre-commit`
+  framework (`pre-commit install`), pinned to gitleaks v8.21.2. Either mechanism alone is enough.
+
+**What gitleaks does not cover:** it finds secrets, not private hostnames or IPs. For this repo that
+second class of leak is a review responsibility, and the rule about it lives in `AGENTS.md`.
+
 ## Utilities
 
 Additional utility commands are defined in `scripts/functions.sh`. This includes various installations and helper functions such as `install_chruby` for setting up Ruby environments, and `install_rust` for Rust programming language tools.

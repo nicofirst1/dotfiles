@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# Blocks commits that contain secrets.
+#
+# This directory is tracked by git, but `core.hooksPath` is per-clone config, so a
+# fresh clone must opt in once:
+#     git config core.hooksPath .githooks
+# Requires the gitleaks scanner on PATH. Unlike the claude_memory copy of this hook,
+# this one does NOT need Go: it uses the installed binary.
+set -uo pipefail
+
+ROOT="$(git rev-parse --show-toplevel)"
+GITDIR="$(git rev-parse --absolute-git-dir)"
+LOG="$GITDIR/gitleaks-precommit.log"
+CONFIG="$ROOT/.gitleaks.toml"
+CMD=(gitleaks git --pre-commit --redact --staged -v --config "$CONFIG")
+
+if ! command -v gitleaks >/dev/null 2>&1; then
+  {
+    echo "pre-commit: gitleaks NOT installed -- THIS COMMIT WAS NOT SCANNED."
+    echo "  install: see README.md > Secret scanning"
+    echo "  manual : ${CMD[*]}"
+  } >&2
+  exit 0
+fi
+
+if "${CMD[@]}" 2>&1 | tee -a "$LOG"; then
+  exit 0
+fi
+
+echo "pre-commit: BLOCKED - gitleaks found potential secrets (full output: $LOG)" >&2
+exit 1
