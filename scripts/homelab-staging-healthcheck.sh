@@ -13,6 +13,18 @@ if [ "$(id -u)" -eq 0 ] && [ -z "${RCLONE_CONFIG:-}" ] && [ -r /home/nico/.confi
   export RCLONE_CONFIG=/home/nico/.config/rclone/rclone.conf
 fi
 
+# Private network values are NOT in the repo-tracked copy: read them from the
+# root-only env file (0600) so the public script carries no hostnames or IPs.
+if [ -r /etc/homelab-staging-healthcheck.env ]; then
+  # shellcheck disable=SC1091
+  . /etc/homelab-staging-healthcheck.env
+fi
+if [ -z "${HEALTHCHECK_DOMAIN:-}" ] || [ -z "${HEALTHCHECK_HOST_IP:-}" ]; then
+  fail 'healthcheck_env_missing_HEALTHCHECK_DOMAIN_or_HEALTHCHECK_HOST_IP'
+  HEALTHCHECK_DOMAIN=invalid.invalid
+  HEALTHCHECK_HOST_IP=127.0.0.1
+fi
+
 # System baseline.
 if systemctl --failed --no-pager | grep -q '^0 loaded units listed'; then ok 'systemd_failed_units=0'; else fail 'systemd_failed_units_nonzero'; systemctl --failed --no-pager; fi
 if [ -f /var/run/reboot-required ]; then warn 'reboot_required=yes'; else ok 'reboot_required=no'; fi
@@ -39,20 +51,20 @@ probe_code hermes_default http://127.0.0.1:8643/health 200
 probe_code hermes_prbot http://127.0.0.1:8642/health 200
 probe_code hermes_default_noauth http://127.0.0.1:8643/v1/models 401
 probe_code hermes_prbot_noauth http://127.0.0.1:8642/v1/models 401
-probe_code hermes_dashboard http://192.168.178.46:9119/ 302
+probe_code hermes_dashboard "http://${HEALTHCHECK_HOST_IP}:9119/" 302
 probe_code openwebui http://127.0.0.1:3000/health 200
 
 # Caddy production-capable HTTPS routes. Use --resolve so this works before DNS cutover.
 for pair in \
-  'grafana:grafana.home.nicolobrandizzi.com:/api/health:200' \
-  'frigate:frigate.home.nicolobrandizzi.com:/:200' \
-  'kuma:status.home.nicolobrandizzi.com:/:302' \
-  'searxng:searxng.home.nicolobrandizzi.com:/search?q=hermes&format=json:200' \
-  'homelab:homelab.home.nicolobrandizzi.com:/:200' \
-  'openwebui:openwebui.home.nicolobrandizzi.com:/:200' \
-  'hermes:hermes.home.nicolobrandizzi.com:/:302' \
-  'backrest:backrest.home.nicolobrandizzi.com:/:200' \
-  'ha:ha.home.nicolobrandizzi.com:/:200'; do
+  "grafana:grafana.${HEALTHCHECK_DOMAIN}:/api/health:200" \
+  "frigate:frigate.${HEALTHCHECK_DOMAIN}:/:200" \
+  "kuma:status.${HEALTHCHECK_DOMAIN}:/:302" \
+  "searxng:searxng.${HEALTHCHECK_DOMAIN}:/search?q=hermes&format=json:200" \
+  "homelab:homelab.${HEALTHCHECK_DOMAIN}:/:200" \
+  "openwebui:openwebui.${HEALTHCHECK_DOMAIN}:/:200" \
+  "hermes:hermes.${HEALTHCHECK_DOMAIN}:/:302" \
+  "backrest:backrest.${HEALTHCHECK_DOMAIN}:/:200" \
+  "ha:ha.${HEALTHCHECK_DOMAIN}:/:200"; do
   IFS=: read -r name host path expect <<< "$pair"
   code=$(curl -sS -o /tmp/homelab-health-caddy-${name}.out -w '%{http_code}' --max-time 25 --resolve "$host:443:127.0.0.1" "https://$host$path" || true)
   if [ "$code" = "$expect" ]; then ok "caddy_${name}_https=${code}"; else fail "caddy_${name}_https=${code}_expected_${expect}"; fi
