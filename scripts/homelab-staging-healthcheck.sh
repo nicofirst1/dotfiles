@@ -98,14 +98,47 @@ for name,cfg in sorted(data.get('cameras',{}).items()): print(f'{name}={cfg.get(
 PY
 if grep -q 'cat_toilet=True' /tmp/homelab-health-frigate.out && grep -q 'living_room=True' /tmp/homelab-health-frigate.out; then ok 'frigate_camera_state_expected'; else fail 'frigate_camera_state_unexpected'; cat /tmp/homelab-health-frigate.out; fi
 
-# SearXNG JSON for Hermes.
-if curl -fsS --max-time 25 'http://127.0.0.1:8888/search?q=hermes&format=json' -o /tmp/homelab-health-searxng.json && python3 - <<'PY'
+# SearXNG JSON for Hermes. The local endpoint itself always answers, so a
+# failure here is almost never the service being down: the observed mode
+# (11 times between 2026-09-09 and 2026-09-27) is HTTP 200 with a valid JSON
+# envelope but zero results, because the upstream engines behind it are
+# CAPTCHA'd or rate-limited from this IP. That is upstream degradation, not a
+# local outage, so retry inside the run first and then fail with the reason
+# attached, instead of only naming the check.
+searxng_json_ok=0
+searxng_detail=''
+for attempt in 1 2 3; do
+  rm -f /tmp/homelab-health-searxng.json
+  code=$(curl -sS --max-time 25 -o /tmp/homelab-health-searxng.json -w '%{http_code}' \
+    'http://127.0.0.1:8888/search?q=hermes&format=json' 2>/dev/null || true)
+  detail=$(python3 - <<'PY' 2>/dev/null
 import json
-with open('/tmp/homelab-health-searxng.json') as f: d=json.load(f)
-assert isinstance(d.get('results', []), list)
-assert len(d.get('results', [])) > 0
+try:
+    with open('/tmp/homelab-health-searxng.json') as f:
+        d = json.load(f)
+except Exception as exc:
+    print('body=unparsable:%s' % type(exc).__name__)
+    raise SystemExit
+res = d.get('results')
+if isinstance(res, list) and res:
+    print('results=%d' % len(res))
+    raise SystemExit
+unresponsive = [str(u[0]) for u in (d.get('unresponsive_engines') or []) if u]
+print('EMPTY results=%s unresponsive=%s' % (
+    len(res) if isinstance(res, list) else 'invalid', ','.join(unresponsive) or 'none'))
 PY
-then ok 'searxng_json_results'; else fail 'searxng_json_results'; fi
+)
+  searxng_detail="http=${code:-none} ${detail:-no_detail}"
+  case "$detail" in
+    results=*) searxng_json_ok=1; break ;;
+  esac
+  if [ "$attempt" -lt 3 ]; then sleep 5; fi
+done
+if [ "$searxng_json_ok" -eq 1 ]; then
+  ok "searxng_json_results ${searxng_detail}"
+else
+  fail "searxng_json_results ${searxng_detail}"
+fi
 
 # HA warehouse export ownership/freshness.
 if systemctl is-enabled --quiet home-automation-export.timer && systemctl is-active --quiet home-automation-export.timer; then
