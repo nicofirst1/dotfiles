@@ -78,10 +78,20 @@ alias lg="lazygit"
 
 alias afa="autoflake --in-place --remove-unused-variables --remove-all-unused-imports  --recursive"
 
+# Same flags as the Claude Code post-edit markdown hook (no rewrap, no width limit)
+alias prettymd="prettier --prose-wrap=never --print-width=999 --write"
+
 # WireGuard tunnel (FritzBox home, split-tunnel — only 192.168.178.0/24)
 if command -v wg-quick &> /dev/null; then
     _WG_CONF="$HOME/Documents/wg_config.conf"
     alias wgup="sudo wg-quick up $_WG_CONF"
     alias wgdown="sudo wg-quick down $_WG_CONF"
     alias wgstatus="sudo wg show"
+fi
+
+# Copy a file's content to the clipboard: copyfile notes.md
+if command -v pbcopy &> /dev/null; then
+    copyfile() { pbcopy < "$1"; }
+elif command -v xclip &> /dev/null; then
+    copyfile() { xclip -selection clipboard < "$1"; }
 fi
