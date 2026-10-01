@@ -23,3 +23,6 @@ backups/.config/zsh/.zprofile
 # --- macOS / editor noise ---
 .DS_Store
 __pycache__/
+
+# --- macOS Terminal auto-generated session files (can hold shell history) ---
+backups/.config/zsh/.zsh_sessions/

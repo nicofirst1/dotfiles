@@ -19,6 +19,12 @@
 #   OO_DATA_DIR    [~/.local/share/openobserve]      persistent stream storage
 #   OO_PORT        [5080]                             UI + OTLP/HTTP ingestion
 #   OO_IMAGE       [public.ecr.aws/zinclabs/openobserve:latest]
+#   OO_INGEST_ALLOWED_UPTO [unset -> OpenObserve's own default, 5h]
+#     Max age (hours) of a doc's _timestamp OpenObserve will accept on ingest.
+#     Bump temporarily (e.g. to backfill old data via openobserve-import-history.sh),
+#     then unset and restart (`launchctl kickstart -k gui/$(id -u)/com.nbrandizzi.openobserve`)
+#     to return to the tight default — a wide window is a rejection safety net,
+#     don't leave it permanently open.
 
 set -euo pipefail
 
@@ -40,6 +46,9 @@ mkdir -p "$DATA_DIR"
 # Clear any container left over from a hard kill so --name is free on restart.
 docker rm -f "$NAME" >/dev/null 2>&1 || true
 
+extra_env=()
+[[ -n "${OO_INGEST_ALLOWED_UPTO:-}" ]] && extra_env+=(-e "ZO_INGEST_ALLOWED_UPTO=${OO_INGEST_ALLOWED_UPTO}")
+
 # Attached (no -d) so launchd sees a long-running process and KeepAlive restarts
 # it; --rm cleans up on exit so the next start is conflict-free.
 exec docker run --rm --name "$NAME" \
@@ -48,4 +57,5 @@ exec docker run --rm --name "$NAME" \
   -e ZO_DATA_DIR="/data" \
   -e ZO_ROOT_USER_EMAIL="$ZO_ROOT_USER_EMAIL" \
   -e ZO_ROOT_USER_PASSWORD="$ZO_ROOT_USER_PASSWORD" \
+  "${extra_env[@]+"${extra_env[@]}"}" \
   "$IMAGE"

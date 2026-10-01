@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.nbrandizzi.restic-backup-check</string>
+
+    <!-- Dead-man's-switch for com.nbrandizzi.restic-backup. Asks restic for the
+         newest snapshot; a macOS banner fires only if the repo is unreachable or
+         the last backup is >3 days old. Silence means the daily backup is fine. -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>/Users/nbrandizzi/dotfiles/scripts/restic-backup-check.sh</string>
+    </array>
+
+    <!-- Weekly: Monday 10:00, when the Mac is likely awake to show the banner.
+         If asleep at the trigger, launchd runs it on the next wake. -->
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Weekday</key>
+        <integer>1</integer>
+        <key>Hour</key>
+        <integer>10</integer>
+        <key>Minute</key>
+        <integer>0</integer>
+    </dict>
+
+    <key>StandardOutPath</key>
+    <string>/Users/nbrandizzi/Library/Logs/restic/restic-check.stdout.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/nbrandizzi/Library/Logs/restic/restic-check.stderr.log</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <!-- restic, rclone, python3 must resolve under launchd's bare PATH. -->
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <key>HOME</key>
+        <string>/Users/nbrandizzi</string>
+    </dict>
+
+    <key>ProcessType</key>
+    <string>Background</string>
+    <key>Nice</key>
+    <integer>10</integer>
+</dict>
+</plist>
