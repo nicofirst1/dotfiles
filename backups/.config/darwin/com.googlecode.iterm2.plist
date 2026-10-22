@@ -4013,7 +4013,7 @@
 			<key>Text</key>
 			<string></string>
 		</dict>
-		<key>0x68-0x180000-0x4</key>
+		<key>0x68-0x180000-0x4-0x1</key>
 		<dict>
 			<key>Action</key>
 			<integer>28</integer>
@@ -4026,7 +4026,7 @@
 			<key>Version</key>
 			<integer>2</integer>
 		</dict>
-		<key>0x76-0x180000-0x9</key>
+		<key>0x76-0x180000-0x9-0x1</key>
 		<dict>
 			<key>Action</key>
 			<integer>29</integer>
@@ -4628,7 +4628,7 @@
 					<key>Text</key>
 					<string>0x1b 0x7f</string>
 				</dict>
-				<key>0xd-0x20000-0x24</key>
+				<key>0xd-0x20000-0x24-0x1</key>
 				<dict>
 					<key>Action</key>
 					<integer>10</integer>
@@ -4784,52 +4784,7 @@
 			<key>Transparency</key>
 			<real>0.0358306414281689</real>
 			<key>Triggers</key>
-			<array>
-				<dict>
-					<key>action</key>
-					<string>iTermEnterWorkgroupTrigger</string>
-					<key>contentregex</key>
-					<string></string>
-					<key>disabled</key>
-					<false/>
-					<key>eventParams</key>
-					<dict>
-						<key>jobName</key>
-						<string>claude</string>
-					</dict>
-					<key>matchType</key>
-					<integer>113</integer>
-					<key>parameter</key>
-					<string>builtin.claudeCode</string>
-					<key>partial</key>
-					<false/>
-					<key>regex</key>
-					<string></string>
-				</dict>
-				<dict>
-					<key>action</key>
-					<string>iTermExitWorkgroupTrigger</string>
-					<key>contentregex</key>
-					<string></string>
-					<key>disabled</key>
-					<false/>
-					<key>eventParams</key>
-					<dict>
-						<key>jobName</key>
-						<string>claude</string>
-						<key>leaderOnly</key>
-						<true/>
-					</dict>
-					<key>matchType</key>
-					<integer>114</integer>
-					<key>parameter</key>
-					<string></string>
-					<key>partial</key>
-					<false/>
-					<key>regex</key>
-					<string></string>
-				</dict>
-			</array>
+			<array/>
 			<key>Unlimited Scrollback</key>
 			<false/>
 			<key>Use Bold Font</key>
@@ -4889,6 +4844,8 @@
 	</dict>
 	<key>PromptOnQuit</key>
 	<false/>
+	<key>ReportRightClick</key>
+	<true/>
 	<key>ShowFullScreenTabBar</key>
 	<false/>
 	<key>SoundForEsc</key>
@@ -4897,10 +4854,14 @@
 	<real>0.33970184553349875</real>
 	<key>StatusMergeWorkgroups</key>
 	<false/>
+	<key>StatusPriorityAddedDoneAndError</key>
+	<true/>
 	<key>StatusPriorityEntries</key>
 	<data>
-	W3sibm90aWZ5Ijp0cnVlLCJwYXR0ZXJuIjoid2FpdCJ9LHsibm90aWZ5IjpmYWxzZSwi
-	cGF0dGVybiI6IndvcmsifSx7Im5vdGlmeSI6dHJ1ZSwicGF0dGVybiI6ImlkbGUifV0=
+	W3sicGF0dGVybiI6IndhaXQiLCJub3RpZnkiOnRydWV9LHsicGF0dGVybiI6ImRvbmUi
+	LCJub3RpZnkiOnRydWV9LHsicGF0dGVybiI6ImVycm9yIiwibm90aWZ5Ijp0cnVlfSx7
+	InBhdHRlcm4iOiJ3b3JrIiwibm90aWZ5IjpmYWxzZX0seyJwYXR0ZXJuIjoiaWRsZSIs
+	Im5vdGlmeSI6dHJ1ZX1d
 	</data>
 	<key>TabStyleWithAutomaticOption</key>
 	<integer>5</integer>
@@ -4912,37 +4873,6 @@
 	<true/>
 	<key>VisualIndicatorForEsc</key>
 	<false/>
-	<key>Workgroups</key>
-	<data>
-	W3sidW5pcXVlSWRlbnRpZmllciI6ImJ1aWx0aW4uY2xhdWRlQ29kZSIsIm5hbWUiOiJD
-	bGF1ZGUgQ29kZSIsInNlc3Npb25zIjpbeyJ1bmlxdWVJZGVudGlmaWVyIjoiYnVpbHRp
-	bi5jbGF1ZGVDb2RlLm1haW4iLCJjb21tYW5kIjoiIiwiZGlzcGxheU5hbWUiOiJDaGF0
-	Iiwia2luZCI6eyJraW5kIjoicm9vdCJ9LCJ1cmxTdHJpbmciOiIiLCJwZXJGaWxlQ29t
-	bWFuZCI6IiIsInRvb2xiYXJJdGVtcyI6W3sia2luZCI6Im1vZGVTd2l0Y2hlciJ9LHsi
-	a2luZCI6ImdpdFN0YXR1cyJ9LHsia2luZCI6ImF1dG9SZXF1ZXN0UmV2aWV3V2hlbklk
-	bGUifV0sIm1vZGUiOiJyZWd1bGFyIn0seyJ1bmlxdWVJZGVudGlmaWVyIjoiYnVpbHRp
-	bi5jbGF1ZGVDb2RlLmRpZmYiLCJjb21tYW5kIjoiZ2l0IGRpZmZ0b29sIC15IC14IHZp
-	bWRpZmYgXFwoZ2l0QmFzZSkiLCJkaXNwbGF5TmFtZSI6IkRpZmYiLCJraW5kIjp7Imtp
-	bmQiOiJwZWVyIn0sInVybFN0cmluZyI6IiIsInBlckZpbGVDb21tYW5kIjoiZ2l0IGRp
-	ZmZ0b29sIC15IC14IHZpbWRpZmYgXFwoZ2l0QmFzZSkgLS0gXFwoZmlsZSkiLCJ0b29s
-	YmFySXRlbXMiOlt7ImtpbmQiOiJtb2RlU3dpdGNoZXIifSx7ImtpbmQiOiJjaGFuZ2Vk
-	RmlsZVNlbGVjdG9yIn0seyJraW5kIjoiZ2l0QmFzZVNlbGVjdG9yIn0seyJiYWNrU2hv
-	cnRjdXQiOnsic2VyaWFsaXplZCI6IjB4ZjcwMi0weDM0MDAwMC0weDdiIn0sImtpbmQi
-	OiJuYXZpZ2F0aW9uIiwiZm9yd2FyZFNob3J0Y3V0Ijp7InNlcmlhbGl6ZWQiOiIweGY3
-	MDMtMHgzNDAwMDAtMHg3YyJ9LCJyZWxvYWRTaG9ydGN1dCI6eyJzZXJpYWxpemVkIjoi
-	MHg3Mi0weDEwMDAwMC0weGYifX1dLCJwYXJlbnRJRCI6ImJ1aWx0aW4uY2xhdWRlQ29k
-	ZS5tYWluIiwibW9kZSI6ImRpZmYifSx7InVuaXF1ZUlkZW50aWZpZXIiOiJidWlsdGlu
-	LmNsYXVkZUNvZGUucmV2aWV3IiwiY29tbWFuZCI6ImNsYXVkZSBcXChjb2RlUmV2aWV3
-	UHJvbXB0KSAtLWFwcGVuZC1zeXN0ZW0tcHJvbXB0LWZpbGUgJ1xcKGNvZGVSZXZpZXdT
-	eXN0ZW1Qcm9tcHRGaWxlKScgLS1zZXR0aW5ncyAnXFwoaXRlcm0yLmFwcEJ1bmRsZVBh
-	dGgpXC9Db250ZW50c1wvUmVzb3VyY2VzXC9jb2RlLXJldmlldy1zZXR0aW5ncy50eHQn
-	IiwiZGlzcGxheU5hbWUiOiJDb2RlIFJldmlldyIsImtpbmQiOnsia2luZCI6InBlZXIi
-	fSwidXJsU3RyaW5nIjoiIiwicGVyRmlsZUNvbW1hbmQiOiIiLCJ0b29sYmFySXRlbXMi
-	Olt7ImtpbmQiOiJtb2RlU3dpdGNoZXIifSx7InNob3J0Y3V0Ijp7InNlcmlhbGl6ZWQi
-	OiIweDcyLTB4MTAwMDAwLTB4ZiJ9LCJraW5kIjoicmVsb2FkIn0seyJraW5kIjoiYXV0
-	b1NlbmRDbGlwcGluZ3NXaGVuSWRsZSJ9XSwicGFyZW50SUQiOiJidWlsdGluLmNsYXVk
-	ZUNvZGUubWFpbiIsIm1vZGUiOiJjb2RlUmV2aWV3In1dfV0=
-	</data>
 	<key>findMode_iTerm</key>
 	<integer>0</integer>
 	<key>kCPKSelectionViewPreferredModeKey</key>
