@@ -95,3 +95,6 @@ if command -v pbcopy &> /dev/null; then
 elif command -v xclip &> /dev/null; then
     copyfile() { xclip -selection clipboard < "$1"; }
 fi
+
+# Home access: iTerm window w/ wireproxy tab + herdr tab (script in ~/.local/bin)
+alias remote_ublion="$HOME/.local/bin/remote_ublion"

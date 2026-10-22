@@ -288,7 +288,7 @@ command = "persiyanov.reviewr.toggle"  # <plugin_id>.<action_id>
 [ui.sidebar.agents]
 # Blank rows between agent entries. Set to 1 to restore the previous spacing.
 row_gap = 0
-rows = [["state_icon", "machine", "workspace", "tab"], ["agent"]]
+rows = [["state_icon", { token = "agent", fg = "#ffffff", bold = true }], [{ token = "workspace", fg = "#888888", bold = false }, { token = "tab", bold = false }]]
 # Optional canonical agent IDs replace the default rows for matching agents.
 # [ui.sidebar.agents.rows_by_agent]
 # claude = [["state_icon", "machine", "workspace", "tab"], ["terminal_title_stripped"], ["agent"]]
@@ -322,8 +322,8 @@ rows = [[ { token = "state_icon", bold = false }, "workspace"], ["branch", "git_
 # enabled = true
 # Optional custom mp3 sound files. Relative paths are resolved from this config file's directory.
 # path = "sounds/notification.mp3"   # one mp3 file for all sound notifications
-# done_path = "sounds/done.mp3"      # overrides only finished notifications
-# request_path = "sounds/request.mp3" # overrides only needs-attention notifications
+done_path = "sounds/done.mp3"        # finished: rising two-note chime (G5->C6)
+request_path = "sounds/request.mp3"  # needs attention: two low buzzes (G4)
 
 # Per-agent overrides: default | on | off
 # By default, droid is muted.
