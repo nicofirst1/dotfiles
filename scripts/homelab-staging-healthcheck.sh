@@ -156,22 +156,48 @@ if [ "$svc_result" = success ] && [ "$svc_status" = 0 ]; then
 else
   fail "ha_export_service_last_result=${svc_result:-unknown}_${svc_status:-unknown}"
 fi
-current_month="/srv/data/ha-warehouse/$(date +%Y-%m).parquet"
-watermark='/srv/data/ha-warehouse/.watermark.json'
+warehouse_dir='/srv/data/ha-warehouse'
+current_month="$warehouse_dir/$(date +%Y-%m).parquet"
+previous_month="$warehouse_dir/$(date -d 'last month' +%Y-%m).parquet"
+watermark="$warehouse_dir/.watermark.json"
 now=$(date +%s)
-for item in "$current_month" "$watermark"; do
-  if [ ! -s "$item" ]; then
-    fail "ha_warehouse_missing_${item##*/}"
-    continue
-  fi
-  mtime=$(stat -c %Y "$item")
+month_start=$(date -d "$(date +%Y-%m-01) 00:00:00" +%s)
+month_elapsed=$((now - month_start))
+# The exporter runs every two hours, with its first run shortly after 01:00.
+# Do not page at midnight simply because the new partition cannot exist yet.
+# The grace is bounded: a missing partition after the first export opportunity
+# remains a real failure, as does a stale prior partition or watermark.
+rollover_grace_seconds="${HA_WAREHOUSE_MONTH_ROLLOVER_GRACE_SECONDS:-9000}"
+if [ -s "$current_month" ]; then
+  mtime=$(stat -c %Y "$current_month")
   age=$((now - mtime))
   if [ "$age" -le 14400 ]; then
-    ok "ha_warehouse_fresh_${item##*/}_age=${age}s"
+    ok "ha_warehouse_fresh_${current_month##*/}_age=${age}s"
   else
-    fail "ha_warehouse_stale_${item##*/}_age=${age}s"
+    fail "ha_warehouse_stale_${current_month##*/}_age=${age}s"
   fi
-done
+elif [ "$month_elapsed" -le "$rollover_grace_seconds" ] && [ -s "$previous_month" ] && [ -s "$watermark" ]; then
+  previous_age=$((now - $(stat -c %Y "$previous_month")))
+  watermark_age=$((now - $(stat -c %Y "$watermark")))
+  if [ "$previous_age" -le 14400 ] && [ "$watermark_age" -le 14400 ]; then
+    warn "ha_warehouse_month_rollover_pending_${current_month##*/}_prior=${previous_month##*/}_age=${previous_age}s"
+  else
+    fail "ha_warehouse_missing_${current_month##*/}"
+  fi
+else
+  fail "ha_warehouse_missing_${current_month##*/}"
+fi
+if [ ! -s "$watermark" ]; then
+  fail "ha_warehouse_missing_${watermark##*/}"
+else
+  mtime=$(stat -c %Y "$watermark")
+  age=$((now - mtime))
+  if [ "$age" -le 14400 ]; then
+    ok "ha_warehouse_fresh_${watermark##*/}_age=${age}s"
+  else
+    fail "ha_warehouse_stale_${watermark##*/}_age=${age}s"
+  fi
+fi
 
 # Cat Grafana dataset job ownership/freshness.
 cat_timer_ok=1
