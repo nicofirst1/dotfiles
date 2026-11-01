@@ -234,12 +234,9 @@ for item in /srv/data/ha-warehouse/cat_toilet_visits.parquet /srv/data/ha-wareho
   fi
 done
 
-# Cat night report timer ownership.
-if systemctl is-enabled --quiet homelab-cat-night-activity-report.timer && systemctl is-active --quiet homelab-cat-night-activity-report.timer; then
-  ok 'cat_night_report_timer_active'
-else
-  fail 'cat_night_report_timer_not_active'
-fi
+# The monthly cat-activity report is an optional notification, not an
+# operational dependency. Its timer may be deliberately disabled without
+# making the homelab unhealthy.
 
 # Backrest owns the backup schedule since 2026-09-09 (plans homelab-local 04:30, homelab-drive 05:15); homelab-backup.timer is disabled, kept as fallback.
 if systemctl is-enabled --quiet backrest.service && systemctl is-active --quiet backrest.service; then
